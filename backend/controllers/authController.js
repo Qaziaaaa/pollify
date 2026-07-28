@@ -1,0 +1,123 @@
+import User from "../models/User.js";
+import jwt from "jsonwebtoken";
+import { generateOTP, expireOTP, otpValid } from "../utils/generateOTP.js";
+import sendMail from "../utils/mailer.js";
+import { uploadToCloudinary } from "../config/cloudinary.js";
+
+const generateToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
+};
+
+const clean = (user) => ({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    username: user.username,
+    avatar: user.avatar,
+    bio: user.bio,
+});
+
+// @desc    Register new user
+// @route   POST /api/auth/register
+export const register = async (req, res) => {
+    try {
+        const { name, email, username, password } = req.body;
+
+        const userExists = await User.findOne({ $or: [{ email }, { username }] });
+        if (userExists) {
+            return res.status(400).json({ message: "User already exists" });
+        }
+
+        let avatar = "";
+        if (req.file) {
+            try {
+                avatar = await uploadToCloudinary(req.file.buffer);
+            } catch (e) {
+                console.warn("Avatar upload skipped:", e.message);
+            }
+        }
+
+        const otp = generateOTP();
+        const user = await User.create({
+            name,
+            email,
+            username,
+            password,
+            avatar,
+            otp: { code: otp, expiresAt: expireOTP() },
+        });
+
+        await sendMail({
+            to: email,
+            subject: `Your OTP is ${otp}`,
+            text: `Use this code to verify your account: ${otp}`,
+        });
+
+        res.status(201).json({ message: "OTP sent to email", email });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Verify OTP
+// @route   POST /api/auth/verify
+export const verifyOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (!otpValid(user, otp)) {
+            return res.status(400).json({ message: "Invalid or expired OTP" });
+        }
+
+        user.isVerified = true;
+        user.otp = { code: undefined, expiresAt: undefined };
+        await user.save();
+
+        res.json({ message: "Email verified successfully" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Login user
+// @route   POST /api/auth/login
+export const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user || !(await user.matchPassword(password))) {
+            return res.status(401).json({ message: "Invalid email or password" });
+        }
+
+        if (!user.isVerified) {
+            return res.status(401).json({ message: "Please verify your email first" });
+        }
+
+        res.json({
+            token: generateToken(user._id),
+            user: clean(user),
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get current user profile
+// @route   GET /api/auth/profile
+export const getProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.userId).select("-password");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.json({ user: clean(user) });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
