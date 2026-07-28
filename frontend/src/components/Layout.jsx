@@ -3,7 +3,7 @@
 // The main page content appears in the middle area
 
 import { Link, useNavigate, Outlet, useLocation } from "react-router-dom";
-import { LayoutDashboard, PlusSquare, User, LogOut, BarChart3 } from "lucide-react";
+import { LayoutDashboard, PlusSquare, User, LogOut, BarChart3, Settings } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Layout() {
@@ -21,6 +21,7 @@ export default function Layout() {
         { to: "/create-poll", label: "Create", Icon: PlusSquare },
         { to: "/profile", label: "Profile", Icon: User },
         { to: "/analytics", label: "Analytics", Icon: BarChart3 },
+        { to: "/settings", label: "Settings", Icon: Settings },
     ];
 
     return (
