@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollify Backend - Architecture Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.7; }
+
+        .header { background: linear-gradient(135deg, #1e293b, #334155); padding: 40px; text-align: center; border-bottom: 3px solid #6366f1; }
+        .header h1 { font-size: 2.5em; color: #818cf8; }
+        .header p { color: #94a3b8; font-size: 1.1em; margin-top: 10px; }
+
+        .tabs { display: flex; justify-content: center; gap: 5px; padding: 20px; background: #1e293b; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; }
+        .tab { padding: 10px 20px; background: #334155; border: none; color: #94a3b8; cursor: pointer; border-radius: 8px; font-size: 14px; transition: all 0.3s; }
+        .tab:hover { background: #475569; color: #e2e8f0; }
+        .tab.active { background: #6366f1; color: white; }
+
+        .section { display: none; padding: 30px; max-width: 1200px; margin: 0 auto; }
+        .section.active { display: block; }
+
+        h2 { color: #818cf8; font-size: 1.8em; margin-bottom: 20px; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        h3 { color: #a5b4fc; font-size: 1.3em; margin: 20px 0 10px; }
+
+        /* FOLDER STRUCTURE */
+        .tree { background: #1e293b; border-radius: 12px; padding: 25px; border: 1px solid #334155; margin: 15px 0; }
+        .tree-item { padding: 6px 0; display: flex; align-items: center; gap: 10px; }
+        .tree-item .icon { font-size: 20px; }
+        .tree-item .name { font-weight: bold; }
+        .tree-item .desc { color: #94a3b8; font-size: 0.9em; }
+        .tree-child { margin-left: 30px; border-left: 2px solid #334155; padding-left: 15px; }
+
+        /* FLOW DIAGRAM */
+        .flow-container { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+        .flow-box { padding: 15px 25px; border-radius: 10px; text-align: center; font-weight: bold; min-width: 150px; }
+        .flow-arrow { font-size: 24px; color: #6366f1; }
+        .flow-box.client { background: #1e3a5f; border: 2px solid #3b82f6; }
+        .flow-box.server { background: #1a3a1a; border: 2px solid #22c55e; }
+        .flow-box.middleware { background: #3b2a1a; border: 2px solid #f59e0b; }
+        .flow-box.controller { background: #2a1a3b; border: 2px solid #a855f7; }
+        .flow-box.model { background: #3b1a2a; border: 2px solid #ef4444; }
+        .flow-box.database { background: #1a2a3b; border: 2px solid #06b6d4; }
+        .flow-box.service { background: #2a3b1a; border: 2px solid #84cc16; }
+
+        /* FILE CARDS */
+        .file-card { background: #1e293b; border-radius: 12px; padding: 20px; margin: 15px 0; border: 1px solid #334155; transition: transform 0.2s; }
+        .file-card:hover { transform: translateY(-2px); border-color: #6366f1; }
+        .file-card h4 { color: #818cf8; font-size: 1.1em; margin-bottom: 8px; }
+        .file-card .path { color: #6366f1; font-family: monospace; font-size: 0.85em; margin-bottom: 8px; }
+        .file-card .purpose { color: #94a3b8; font-size: 0.95em; }
+        .file-card .functions { margin-top: 10px; }
+        .function-item { background: #0f172a; padding: 10px 15px; margin: 5px 0; border-radius: 6px; border-left: 3px solid #6366f1; }
+        .function-item .fname { color: #818cf8; font-weight: bold; font-family: monospace; }
+        .function-item .fdesc { color: #94a3b8; font-size: 0.9em; margin-top: 4px; }
+
+        /* ARCHITECTURE DIAGRAM */
+        .arch-diagram { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .arch-box { padding: 20px; border-radius: 10px; text-align: center; }
+        .arch-box h4 { margin-bottom: 8px; }
+        .arch-box ul { list-style: none; text-align: left; }
+        .arch-box ul li { padding: 4px 0; color: #cbd5e1; font-size: 0.9em; }
+
+        /* FLOW STEPS */
+        .step-flow { position: relative; padding-left: 40px; margin: 15px 0; }
+        .step { position: relative; padding: 15px 20px; margin: 10px 0; background: #1e293b; border-radius: 8px; border-left: 3px solid #6366f1; }
+        .step::before { content: attr(data-step); position: absolute; left: -45px; width: 30px; height: 30px; background: #6366f1; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; }
+        .step .code { background: #0f172a; padding: 8px 12px; border-radius: 4px; font-family: monospace; color: #818cf8; margin-top: 8px; font-size: 0.85em; }
+
+        /* CONNECTIONS TABLE */
+        .conn-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .conn-table th { background: #334155; padding: 12px; text-align: left; color: #818cf8; }
+        .conn-table td { padding: 10px 12px; border-bottom: 1px solid #1e293b; }
+        .conn-table tr:nth-child(even) { background: #1e293b; }
+        .conn-table tr:hover { background: #334155; }
+
+        /* SVG DIAGRAMS */
+        .diagram-container { background: #1e293b; border-radius: 12px; padding: 20px; margin: 20px 0; overflow-x: auto; text-align: center; border: 1px solid #334155; }
+        .diagram-container svg { max-width: 100%; height: auto; }
+
+        .note { background: #1e293b; padding: 15px 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 15px 0; color: #fbbf24; }
+        .note strong { color: #fcd34d; }
+
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold; }
+        .badge-get { background: #166534; color: #86efac; }
+        .badge-post { background: #1e40af; color: #93c5fd; }
+        .badge-delete { background: #991b1b; color: #fca5a5; }
+        .badge-protected { background: #92400e; color: #fcd34d; }
+
+        @media (max-width: 768px) {
+            .arch-diagram { grid-template-columns: 1fr; }
+            .flow-container { flex-direction: column; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Pollify Backend Architecture</h1>
+    <p>Complete guide to understand the flow, connections, and purpose of every file</p>
+</div>
+
+<div class="tabs">
+    <button class="tab active" onclick="showTab('overview')">Overview</button>
+    <button class="tab" onclick="showTab('architecture')">Architecture</button>
+    <button class="tab" onclick="showTab('requestflow')">Request Flow</button>
+    <button class="tab" onclick="showTab('files')">All Files</button>
+    <button class="tab" onclick="showTab('register')">Register Flow</button>
+    <button class="tab" onclick="showTab('login')">Login Flow</button>
+    <button class="tab" onclick="showTab('poll')">Poll Flow</button>
+    <button class="tab" onclick="showTab('connections')">Connections</button>
+</div>
+
+<!-- ============ OVERVIEW ============ -->
+<div class="section active" id="overview">
+    <h2>Project Overview</h2>
+    <p><strong>Pollify</strong> is a polling app backend where users can create polls, vote, comment, and bookmark.</p>
+
+    <h3>Folder Structure</h3>
+    <div class="tree">
+        <div class="tree-item"><span class="icon">📁</span><span class="name">backend/</span><span class="desc">- Root folder</span></div>
+        <div class="tree-child">
+            <div class="tree-item"><span class="icon">📄</span><span class="name">server.js</span><span class="desc">- Entry point. Starts the server.</span></div>
+            <div class="tree-item"><span class="icon">📄</span><span class="name">.env</span><span class="desc">- Secret keys (DB, JWT, API keys)</span></div>
+            <div class="tree-item"><span class="icon">📁</span><span class="name">config/</span><span class="desc">- Setup external services</span></div>
+            <div class="tree-child">
+                <div class="tree-item"><span class="icon">📄</span><span class="name">db.js</span><span class="desc">- MongoDB connection</span></div>
+                <div class="tree-item"><span class="icon">📄</span><span class="name">cloudinary.js</span><span class="desc">- Image upload setup</span></div>
+                <div class="tree-item"><span class="icon">📄</span><span class="name">mailer.js</span><span class="desc">- Email service setup</span></div>
+            </div>
+            <div class="tree-item"><span class="icon">📁</span><span class="name">models/</span><span class="desc">- Database schemas (blueprints)</span></div>
+            <div class="tree-child">
+                <div class="tree-item"><span class="icon">📄</span><span class="name">User.js</span><span class="desc">- User schema + password hashing</span></div>
+                <div class="tree-item"><span class="icon">📄</span><span class="name">Poll.js</span><span class="desc">- Poll + embedded Vote schema</span></div>
+                <div class="tree-item"><span class="icon">📄</span><span class="name">Comment.js</span><span class="desc">- Comment schema (with replies)</span></div>
+            </div>
+            <div class="tree-item"><span class="icon">📁</span><span class="name">middleware/</span><span class="desc">- Runs BEFORE controllers</span></div>
+            <div class="tree-child">
+                <div class="tree-item"><span class="icon">📄</span><span class="name">auth.js</span><span class="desc">- Verifies JWT token</span></div>
+            </div>
+            <div class="tree-item"><span class="icon">📁</span><span class="name">controllers/</span><span class="desc">- Business logic</span></div>
+            <div class="tree-child">
+                <div class="tree-item"><span class="icon">📄</span><span class="name">authController.js</span><span class="desc">- Register, Login, Verify, Profile</span></div>
+                <div class="tree-item"><span class="icon">📄</span><span class="name">passwordController.js</span><span class="desc">- Forgot + Reset password</span></div>
+                <div class="tree-item"><span class="icon">📄</span><span class="name">pollController.js</span><span class="desc">- Create, View, Vote, Delete polls</span></div>
+                <div class="tree-item"><span class="icon">📄</span><span class="name">commentController.js</span><span class="desc">- Add, View, Delete comments</span></div>
+                <div class="tree-item"><span class="icon">📄</span><span class="name">bookmarkController.js</span><span class="desc">- Bookmark/Unbookmark polls</span></div>
+            </div>
+            <div class="tree-item"><span class="icon">📁</span><span class="name">routes/</span><span class="desc">- Maps URLs to controllers</span></div>
+            <div class="tree-child">
+                <div class="tree-item"><span class="icon">📄</span><span class="name">authRoutes.js</span><span class="desc">- /api/auth/* routes</span></div>
+                <div class="tree-item"><span class="icon">📄</span><span class="name">pollRoutes.js</span><span class="desc">- /api/polls/* routes</span></div>
+            </div>
+            <div class="tree-item"><span class="icon">📁</span><span class="name">utils/</span><span class="desc">- Small helper tools</span></div>
+            <div class="tree-child">
+                <div class="tree-item"><span class="icon">📄</span><span class="name">generateOTP.js</span><span class="desc">- 6-digit OTP generation</span></div>
+                <div class="tree-item"><span class="icon">📄</span><span class="name">mailer.js</span><span class="desc">- Sends emails</span></div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Each Folder's Purpose (Simple)</h3>
+    <div class="arch-diagram">
+        <div class="arch-box" style="background:#1a2744;border:1px solid #3b82f6">
+            <h4>config/</h4>
+            <p style="color:#93c5fd;font-size:0.9em">Plug in external services</p>
+            <ul><li>DB connection</li><li>Cloudinary images</li><li>Email SMTP</li></ul>
+        </div>
+        <div class="arch-box" style="background:#1a3327;border:1px solid #22c55e">
+            <h4>models/</h4>
+            <p style="color:#86efac;font-size:0.9em">Define data structure</p>
+            <ul><li>User fields</li><li>Poll fields</li><li>Comment fields</li></ul>
+        </div>
+        <div class="arch-box" style="background:#2a1a3b;border:1px solid #a855f7">
+            <h4>controllers/</h4>
+            <p style="color:#d8b4fe;font-size:0.9em">Handle business logic</p>
+            <ul><li>Register, Login</li><li>Create poll, Vote</li><li>Add comment</li></ul>
+        </div>
+        <div class="arch-box" style="background:#2a2a1a;border:1px solid #eab308">
+            <h4>middleware/</h4>
+            <p style="color:#fde047;font-size:0.9em">Gatekeeper (auth check)</p>
+            <ul><li>Verifies JWT token</li><li>Blocks unauthorized</li></ul>
+        </div>
+        <div class="arch-box" style="background:#2a1a1a;border:1px solid #ef4444">
+            <h4>routes/</h4>
+            <p style="color:#fca5a5;font-size:0.9em">Map URLs to functions</p>
+            <ul><li>POST /login</li><li>GET /polls</li></ul>
+        </div>
+        <div class="arch-box" style="background:#1a2a2a;border:1px solid #06b6d4">
+            <h4>utils/</h4>
+            <p style="color:#67e8f9;font-size:0.9em">Small reusable tools</p>
+            <ul><li>Generate OTP</li><li>Send email</li></ul>
+        </div>
+    </div>
+</div>
+
+<!-- ============ ARCHITECTURE ============ -->
+<div class="section" id="architecture">
+    <h2>Architecture - How Everything Connects</h2>
+
+    <h3>The Big Picture</h3>
+    <div class="diagram-container">
+        <svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
+            <!-- CLIENT -->
+            <rect x="350" y="10" width="200" height="50" rx="10" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2"/>
+            <text cx="450" cy="40" text-anchor="middle" fill="#93c5fd" font-size="14" font-weight="bold" x="450" y="40">FRONTEND (Client)</text>
+
+            <!-- Arrow down -->
+            <line x1="450" y1="60" x2="450" y2="90" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <!-- SERVER -->
+            <rect x="300" y="90" width="300" height="50" rx="10" fill="#1a3a1a" stroke="#22c55e" stroke-width="2"/>
+            <text x="450" y="120" text-anchor="middle" fill="#86efac" font-size="14" font-weight="bold">server.js (Entry Point)</text>
+
+            <!-- Arrow down -->
+            <line x1="450" y1="140" x2="450" y2="170" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <!-- ROUTES -->
+            <rect x="200" y="170" width="500" height="50" rx="10" fill="#2a1a1a" stroke="#ef4444" stroke-width="2"/>
+            <text x="350" y="200" text-anchor="middle" fill="#fca5a5" font-size="13" font-weight="bold">authRoutes.js</text>
+            <text x="550" y="200" text-anchor="middle" fill="#fca5a5" font-size="13" font-weight="bold">pollRoutes.js</text>
+
+            <!-- Arrow down -->
+            <line x1="350" y1="220" x2="350" y2="250" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+            <line x1="550" y1="220" x2="550" y2="250" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <!-- MIDDLEWARE -->
+            <rect x="280" y="250" width="140" height="40" rx="8" fill="#3b2a1a" stroke="#f59e0b" stroke-width="2"/>
+            <text x="350" y="275" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="bold">auth middleware</text>
+
+            <!-- Arrow from middleware -->
+            <line x1="350" y1="290" x2="350" y2="320" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <!-- CONTROLLERS -->
+            <rect x="100" y="320" width="700" height="50" rx="10" fill="#2a1a3b" stroke="#a855f7" stroke-width="2"/>
+            <text x="200" y="350" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">authController</text>
+            <text x="370" y="350" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">passwordController</text>
+            <text x="540" y="350" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">pollController</text>
+            <text x="690" y="350" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">comment/bookmark</text>
+
+            <!-- Arrow down -->
+            <line x1="200" y1="370" x2="200" y2="400" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+            <line x1="450" y1="370" x2="450" y2="400" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+            <line x1="700" y1="370" x2="700" y2="400" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <!-- MODELS -->
+            <rect x="100" y="400" width="180" height="50" rx="10" fill="#1a3327" stroke="#22c55e" stroke-width="2"/>
+            <text x="190" y="430" text-anchor="middle" fill="#86efac" font-size="13" font-weight="bold">User.js Model</text>
+
+            <rect x="360" y="400" width="180" height="50" rx="10" fill="#1a3327" stroke="#22c55e" stroke-width="2"/>
+            <text x="450" y="430" text-anchor="middle" fill="#86efac" font-size="13" font-weight="bold">Poll.js Model</text>
+
+            <rect x="620" y="400" width="180" height="50" rx="10" fill="#1a3327" stroke="#22c55e" stroke-width="2"/>
+            <text x="710" y="430" text-anchor="middle" fill="#86efac" font-size="13" font-weight="bold">Comment.js Model</text>
+
+            <!-- Arrow down -->
+            <line x1="190" y1="450" x2="190" y2="480" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+            <line x1="450" y1="450" x2="450" y2="480" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+            <line x1="710" y1="450" x2="710" y2="480" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <!-- DATABASE -->
+            <rect x="150" y="480" width="600" height="35" rx="8" fill="#1a2a3b" stroke="#06b6d4" stroke-width="2"/>
+            <text x="450" y="503" text-anchor="middle" fill="#67e8f9" font-size="13" font-weight="bold">MONGODB DATABASE</text>
+
+            <!-- SIDE: CONFIG SERVICES -->
+            <rect x="10" y="90" width="150" height="40" rx="8" fill="#1a2744" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="85" y="115" text-anchor="middle" fill="#93c5fd" font-size="11">config/db.js</text>
+            <line x1="160" y1="110" x2="300" y2="115" stroke="#3b82f6" stroke-width="1" stroke-dasharray="5"/>
+
+            <rect x="10" y="140" width="150" height="40" rx="8" fill="#1a2744" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="85" y="165" text-anchor="middle" fill="#93c5fd" font-size="11">config/mailer.js</text>
+
+            <rect x="10" y="190" width="150" height="40" rx="8" fill="#1a2744" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="85" y="215" text-anchor="middle" fill="#93c5fd" font-size="11">config/cloudinary.js</text>
+
+            <!-- SIDE: UTILS -->
+            <rect x="740" y="140" width="150" height="40" rx="8" fill="#2a3b1a" stroke="#84cc16" stroke-width="1.5"/>
+            <text x="815" y="165" text-anchor="middle" fill="#bef264" font-size="11">utils/generateOTP.js</text>
+
+            <rect x="740" y="190" width="150" height="40" rx="8" fill="#2a3b1a" stroke="#84cc16" stroke-width="1.5"/>
+            <text x="815" y="215" text-anchor="middle" fill="#bef264" font-size="11">utils/mailer.js</text>
+
+            <!-- Arrow marker -->
+            <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1"/>
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <h3>The Layer System</h3>
+    <div class="note">
+        <strong>Rule:</strong> Each layer ONLY talks to the layer next to it. Controllers never call routes. Models never call controllers.
+    </div>
+
+    <div class="flow-container">
+        <div class="flow-box client">Frontend<br><small>Sends request</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box server">server.js<br><small>Entry point</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box" style="background:#2a1a1a;border:2px solid #ef4444">Routes<br><small>Matches URL</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box middleware">Middleware<br><small>Auth check</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box controller">Controller<br><small>Business logic</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box model">Model<br><small>DB operations</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box database">MongoDB<br><small>Data stored</small></div>
+    </div>
+</div>
+
+<!-- ============ REQUEST FLOW ============ -->
+<div class="section" id="requestflow">
+    <h2>Complete Request Lifecycle</h2>
+
+    <h3>What Happens When You Make a Request</h3>
+    <div class="step-flow">
+        <div class="step" data-step="1">
+            <strong>Frontend sends HTTP request</strong>
+            <div class="code">fetch("http://localhost:5000/api/auth/login", { method: "POST", body: { email, password } })</div>
+        </div>
+        <div class="step" data-step="2">
+            <strong>server.js receives the request</strong><br>
+            Express matches the URL pattern to a route file
+            <div class="code">app.use("/api/auth", authRoutes)  // routes to authRoutes.js</div>
+        </div>
+        <div class="step" data-step="3">
+            <strong>Route file matches exact URL</strong><br>
+            authRoutes.js finds matching route and its handler function
+            <div class="code">router.post("/login", login)  // POST + /login = login()</div>
+        </div>
+        <div class="step" data-step="4">
+            <strong>Middleware runs (if applied)</strong><br>
+            auth.js checks for JWT token. If protected route and no token = blocked.
+            <div class="code">router.get("/profile", auth, getProfile)  // auth runs first</div>
+        </div>
+        <div class="step" data-step="5">
+            <strong>Controller handles logic</strong><br>
+            Does the actual work: validate input, check DB, create data, etc.
+            <div class="code">const user = await User.findOne({ email })  // find user in DB</div>
+        </div>
+        <div class="step" data-step="6">
+            <strong>Model talks to MongoDB</strong><br>
+            Mongoose translates JavaScript to database commands
+            <div class="code">await User.create({ name, email, password })  // inserts into MongoDB</div>
+        </div>
+        <div class="step" data-step="7">
+            <strong>Response sent back</strong><br>
+            Controller sends JSON response to frontend
+            <div class="code">res.json({ token, user })  // frontend receives this</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ ALL FILES ============ -->
+<div class="section" id="files">
+    <h2>All Files - Purpose & Functions</h2>
+
+    <h3>config/ - External Service Setup</h3>
+
+    <div class="file-card">
+        <div class="path">config/db.js</div>
+        <h4>MongoDB Connection</h4>
+        <div class="purpose">Connects your app to the database. Uses URI from .env.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">connectDB()</div>
+                <div class="fdesc">Async function that calls mongoose.connect(). If it fails, stops the server.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="file-card">
+        <div class="path">config/cloudinary.js</div>
+        <h4>Image Upload Service</h4>
+        <div class="purpose">Connects to Cloudinary for image hosting.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">cloudinary.config({...})</div>
+                <div class="fdesc">Sets up Cloudinary with API keys from .env.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">upload</div>
+                <div class="fdesc">Multer middleware that catches file uploads and stores in memory.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">uploadToCloudinary(buffer)</div>
+                <div class="fdesc">Takes image buffer, uploads to Cloudinary, returns the URL.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="file-card">
+        <div class="path">config/mailer.js</div>
+        <h4>Email Service Connection</h4>
+        <div class="purpose">Creates SMTP transporter for sending emails.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">transporter</div>
+                <div class="fdesc">Nodemailer transport object configured with SMTP host, port, auth from .env.</div>
+            </div>
+        </div>
+    </div>
+
+    <h3>models/ - Database Schemas</h3>
+
+    <div class="file-card">
+        <div class="path">models/User.js</div>
+        <h4>User Schema</h4>
+        <div class="purpose">Defines user data structure with password hashing.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">userSchema.pre("save")</div>
+                <div class="fdesc">Hook that runs before every save. Hashes password if modified.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">userSchema.methods.matchPassword()</div>
+                <div class="fdesc">Instance method. Compares entered password with stored hash. Returns true/false.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="file-card">
+        <div class="path">models/Poll.js</div>
+        <h4>Poll Schema (with embedded Votes)</h4>
+        <div class="purpose">Defines poll structure. Votes are embedded inside polls.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">voteSchema</div>
+                <div class="fdesc">Sub-schema embedded inside Poll. Each vote = user + value.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">pollSchema</div>
+                <div class="fdesc">Main schema with creator, question, type, options, votes array.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="file-card">
+        <div class="path">models/Comment.js</div>
+        <h4>Comment Schema</h4>
+        <div class="purpose">Defines comment structure with nested replies.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">commentSchema</div>
+                <div class="fdesc">Fields: user, poll, text, parentComment (self-reference for replies).</div>
+            </div>
+        </div>
+    </div>
+
+    <h3>middleware/ - Request Interceptors</h3>
+
+    <div class="file-card">
+        <div class="path">middleware/auth.js</div>
+        <h4>JWT Authentication Middleware</h4>
+        <div class="purpose">Runs BEFORE protected controllers. Verifies JWT token.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">auth(req, res, next)</div>
+                <div class="fdesc">Extracts token from headers, verifies with JWT_SECRET, attaches userId to request, calls next().</div>
+            </div>
+        </div>
+    </div>
+
+    <h3>controllers/ - Business Logic</h3>
+
+    <div class="file-card">
+        <div class="path">controllers/authController.js</div>
+        <h4>Authentication Logic</h4>
+        <div class="purpose">Handles user registration, login, OTP verification, profile.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">register(req, res)</div>
+                <div class="fdesc">Creates user, uploads avatar, generates OTP, sends verification email.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">verifyOtp(req, res)</div>
+                <div class="fdesc">Verifies OTP, marks user as verified, clears OTP.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">login(req, res)</div>
+                <div class="fdesc">Checks credentials + verification status, returns JWT token.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">getProfile(req, res)</div>
+                <div class="fdesc">Returns logged-in user's profile (protected route).</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="file-card">
+        <div class="path">controllers/passwordController.js</div>
+        <h4>Password Reset Logic</h4>
+        <div class="purpose">Handles forgot password and reset with OTP.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">forgotPassword(req, res)</div>
+                <div class="fdesc">Finds user, generates OTP, saves it, sends OTP email.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">resetPassword(req, res)</div>
+                <div class="fdesc">Verifies OTP, sets new password, clears OTP.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="file-card">
+        <div class="path">controllers/pollController.js</div>
+        <h4>Poll CRUD Logic</h4>
+        <div class="purpose">Create, read, vote, delete polls.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">createPoll(req, res)</div>
+                <div class="fdesc">Creates new poll with question, type, options.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">getPolls(req, res)</div>
+                <div class="fdesc">Returns all polls sorted newest first. Populates creator details.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">getPoll(req, res)</div>
+                <div class="fdesc">Returns single poll by ID. Increases view count.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">votePoll(req, res)</div>
+                <div class="fdesc">Adds/updates vote. Checks if already voted and if poll is closed.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">deletePoll(req, res)</div>
+                <div class="fdesc">Deletes poll. Only creator can delete their own polls.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="file-card">
+        <div class="path">controllers/commentController.js</div>
+        <h4>Comment Logic</h4>
+        <div class="purpose">Add, view, delete comments on polls.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">addComment(req, res)</div>
+                <div class="fdesc">Adds comment to poll. Supports nested replies via parentComment.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">getComments(req, res)</div>
+                <div class="fdesc">Returns all comments for a poll with user details.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">deleteComment(req, res)</div>
+                <div class="fdesc">Deletes comment. Only comment author can delete.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="file-card">
+        <div class="path">controllers/bookmarkController.js</div>
+        <h4>Bookmark Logic</h4>
+        <div class="purpose">Bookmark/unbookmark polls.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">bookmarkPoll(req, res)</div>
+                <div class="fdesc">Toggle: if already bookmarked removes it, otherwise adds it.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">getBookmarks(req, res)</div>
+                <div class="fdesc">Returns all bookmarked polls with full details (nested populate).</div>
+            </div>
+        </div>
+    </div>
+
+    <h3>routes/ - URL Mapping</h3>
+
+    <div class="file-card">
+        <div class="path">routes/authRoutes.js</div>
+        <h4>Auth Routes</h4>
+        <div class="purpose">Maps auth-related URLs to controller functions.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">POST /register, /verify, /login</div>
+                <div class="fdesc">Public routes - no auth needed.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">GET /profile, /bookmarks</div>
+                <div class="fdesc">Protected routes - auth middleware required.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">POST /forgot-password, /reset-password</div>
+                <div class="fdesc">Public routes - for password recovery.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="file-card">
+        <div class="path">routes/pollRoutes.js</div>
+        <h4>Poll Routes</h4>
+        <div class="purpose">Maps poll-related URLs to controller functions.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">GET / and /:id</div>
+                <div class="fdesc">Public - anyone can view polls.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">POST /, /:id/vote, /:id/comments, /:id/bookmark</div>
+                <div class="fdesc">Protected - must be logged in.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">DELETE /:id</div>
+                <div class="fdesc">Protected - only poll creator can delete.</div>
+            </div>
+        </div>
+    </div>
+
+    <h3>utils/ - Helper Tools</h3>
+
+    <div class="file-card">
+        <div class="path">utils/generateOTP.js</div>
+        <h4>OTP Generator</h4>
+        <div class="purpose">Creates 6-digit verification codes.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">generateOTP()</div>
+                <div class="fdesc">Returns random 6-digit string like "482917".</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">expireOTP()</div>
+                <div class="fdesc">Returns Date object 10 minutes from now.</div>
+            </div>
+            <div class="function-item">
+                <div class="fname">otpValid(user, otp)</div>
+                <div class="fdesc">Checks if OTP matches AND hasn't expired.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="file-card">
+        <div class="path">utils/mailer.js</div>
+        <h4>Email Sender</h4>
+        <div class="purpose">Sends emails using the transporter from config/mailer.js.</div>
+        <div class="functions">
+            <div class="function-item">
+                <div class="fname">sendMail({ to, subject, text })</div>
+                <div class="fdesc">Sends email. Returns true if sent, false if failed.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ REGISTER FLOW ============ -->
+<div class="section" id="register">
+    <h2>Registration Flow - Step by Step</h2>
+
+    <div class="diagram-container">
+        <svg viewBox="0 0 800 680" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="arr" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1"/>
+                </marker>
+            </defs>
+
+            <!-- Step 1 -->
+            <rect x="250" y="10" width="300" height="40" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2"/>
+            <text x="400" y="35" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="bold">1. Frontend: POST /api/auth/register</text>
+            <text x="400" y="55" text-anchor="middle" fill="#94a3b8" font-size="11">{ name, email, username, password, avatar }</text>
+            <line x1="400" y1="60" x2="400" y2="80" stroke="#6366f1" stroke-width="2" marker-end="url(#arr)"/>
+
+            <!-- Step 2 -->
+            <rect x="250" y="80" width="300" height="35" rx="8" fill="#2a1a1a" stroke="#ef4444" stroke-width="2"/>
+            <text x="400" y="102" text-anchor="middle" fill="#fca5a5" font-size="13" font-weight="bold">2. authRoutes.js matches URL</text>
+            <line x1="400" y1="115" x2="400" y2="135" stroke="#6366f1" stroke-width="2" marker-end="url(#arr)"/>
+
+            <!-- Step 3 -->
+            <rect x="200" y="135" width="400" height="55" rx="8" fill="#2a1a3b" stroke="#a855f7" stroke-width="2"/>
+            <text x="400" y="155" text-anchor="middle" fill="#d8b4fe" font-size="13" font-weight="bold">3. authController.register()</text>
+            <text x="400" y="175" text-anchor="middle" fill="#94a3b8" font-size="11">Check if user exists, upload avatar, generate OTP</text>
+            <line x1="400" y1="190" x2="400" y2="210" stroke="#6366f1" stroke-width="2" marker-end="url(#arr)"/>
+
+            <!-- Step 4 - branches -->
+            <rect x="50" y="210" width="250" height="55" rx="8" fill="#1a3327" stroke="#22c55e" stroke-width="2"/>
+            <text x="175" y="233" text-anchor="middle" fill="#86efac" font-size="12" font-weight="bold">4a. User.findOne() check</text>
+            <text x="175" y="253" text-anchor="middle" fill="#94a3b8" font-size="10">Same email/username? Return 400</text>
+
+            <rect x="500" y="210" width="250" height="55" rx="8" fill="#1a3327" stroke="#22c55e" stroke-width="2"/>
+            <text x="625" y="233" text-anchor="middle" fill="#86efac" font-size="12" font-weight="bold">4b. uploadToCloudinary()</text>
+            <text x="625" y="253" text-anchor="middle" fill="#94a3b8" font-size="10">Upload avatar image</text>
+
+            <line x1="400" y1="190" x2="175" y2="210" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr)"/>
+            <line x1="400" y1="190" x2="625" y2="210" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+            <!-- Step 5 -->
+            <line x1="400" y1="265" x2="400" y2="290" stroke="#6366f1" stroke-width="2" marker-end="url(#arr)"/>
+            <rect x="200" y="290" width="400" height="55" rx="8" fill="#2a3b1a" stroke="#84cc16" stroke-width="2"/>
+            <text x="400" y="313" text-anchor="middle" fill="#bef264" font-size="12" font-weight="bold">5. generateOTP() + expireOTP()</text>
+            <text x="400" y="333" text-anchor="middle" fill="#94a3b8" font-size="11">Creates "482917" + expiry 10 min</text>
+            <line x1="400" y1="345" x2="400" y2="365" stroke="#6366f1" stroke-width="2" marker-end="url(#arr)"/>
+
+            <!-- Step 6 -->
+            <rect x="200" y="365" width="400" height="45" rx="8" fill="#1a3327" stroke="#22c55e" stroke-width="2"/>
+            <text x="400" y="393" text-anchor="middle" fill="#86efac" font-size="12" font-weight="bold">6. User.create() - saves to MongoDB</text>
+            <line x1="400" y1="410" x2="400" y2="430" stroke="#6366f1" stroke-width="2" marker-end="url(#arr)"/>
+
+            <!-- Step 7 -->
+            <rect x="200" y="430" width="400" height="55" rx="8" fill="#1a2744" stroke="#3b82f6" stroke-width="2"/>
+            <text x="400" y="453" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="bold">7. sendMail() - sends OTP email</text>
+            <text x="400" y="473" text-anchor="middle" fill="#94a3b8" font-size="11">Uses config/mailer.js transporter</text>
+            <line x1="400" y1="485" x2="400" y2="505" stroke="#6366f1" stroke-width="2" marker-end="url(#arr)"/>
+
+            <!-- Step 8 -->
+            <rect x="200" y="505" width="400" height="45" rx="8" fill="#2a1a1a" stroke="#ef4444" stroke-width="2"/>
+            <text x="400" y="533" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="bold">8. res.json({ message: "OTP sent", email })</text>
+            <line x1="400" y1="550" x2="400" y2="570" stroke="#6366f1" stroke-width="2" marker-end="url(#arr)"/>
+
+            <!-- DB -->
+            <rect x="250" y="570" width="300" height="40" rx="8" fill="#1a2a3b" stroke="#06b6d4" stroke-width="2"/>
+            <text x="400" y="595" text-anchor="middle" fill="#67e8f9" font-size="13" font-weight="bold">MongoDB: User saved with isVerified: false</text>
+
+            <!-- Email -->
+            <rect x="250" y="620" width="300" height="40" rx="8" fill="#1a2744" stroke="#3b82f6" stroke-width="2"/>
+            <text x="400" y="645" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="bold">Email sent: "Your OTP is 482917"</text>
+        </svg>
+    </div>
+
+    <div class="note">
+        <strong>After registration:</strong> User must verify OTP via POST /api/auth/verify before they can login.
+    </div>
+</div>
+
+<!-- ============ LOGIN FLOW ============ -->
+<div class="section" id="login">
+    <h2>Login Flow - Step by Step</h2>
+
+    <div class="diagram-container">
+        <svg viewBox="0 0 800 550" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="arr2" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1"/>
+                </marker>
+            </defs>
+
+            <!-- Step 1 -->
+            <rect x="250" y="10" width="300" height="40" rx="8" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2"/>
+            <text x="400" y="35" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="bold">1. Frontend: POST /api/auth/login</text>
+            <text x="400" y="55" text-anchor="middle" fill="#94a3b8" font-size="11">{ email, password }</text>
+            <line x1="400" y1="60" x2="400" y2="80" stroke="#6366f1" stroke-width="2" marker-end="url(#arr2)"/>
+
+            <!-- Step 2 -->
+            <rect x="250" y="80" width="300" height="35" rx="8" fill="#2a1a1a" stroke="#ef4444" stroke-width="2"/>
+            <text x="400" y="102" text-anchor="middle" fill="#fca5a5" font-size="13" font-weight="bold">2. authRoutes.js -> authController.login()</text>
+            <line x1="400" y1="115" x2="400" y2="135" stroke="#6366f1" stroke-width="2" marker-end="url(#arr2)"/>
+
+            <!-- Step 3 -->
+            <rect x="250" y="135" width="300" height="35" rx="8" fill="#1a3327" stroke="#22c55e" stroke-width="2"/>
+            <text x="400" y="157" text-anchor="middle" fill="#86efac" font-size="12" font-weight="bold">3. User.findOne({ email })</text>
+            <line x1="400" y1="170" x2="400" y2="190" stroke="#6366f1" stroke-width="2" marker-end="url(#arr2)"/>
+
+            <!-- Decision -->
+            <rect x="250" y="190" width="300" height="35" rx="8" fill="#3b2a1a" stroke="#f59e0b" stroke-width="2"/>
+            <text x="400" y="212" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="bold">4. user.matchPassword(password)?</text>
+
+            <!-- Branches -->
+            <line x1="300" y1="225" x2="150" y2="250" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr2)"/>
+            <line x1="500" y1="225" x2="650" y2="250" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+            <rect x="50" y="250" width="200" height="35" rx="8" fill="#3b1a1a" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="150" y="272" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="bold">Wrong password -> 401</text>
+
+            <rect x="550" y="250" width="200" height="35" rx="8" fill="#1a3327" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="650" y="272" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">Correct -> Continue</text>
+
+            <line x1="650" y1="285" x2="400" y2="310" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+            <!-- Step 5 -->
+            <rect x="250" y="310" width="300" height="35" rx="8" fill="#3b2a1a" stroke="#f59e0b" stroke-width="2"/>
+            <text x="400" y="332" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="bold">5. user.isVerified?</text>
+
+            <line x1="300" y1="345" x2="150" y2="370" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr2)"/>
+            <line x1="500" y1="345" x2="650" y2="370" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+            <rect x="50" y="370" width="200" height="35" rx="8" fill="#3b1a1a" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="150" y="392" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="bold">Not verified -> 401</text>
+
+            <rect x="550" y="370" width="200" height="35" rx="8" fill="#1a3327" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="650" y="392" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">Verified -> Continue</text>
+
+            <line x1="650" y1="405" x2="400" y2="430" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+            <!-- Step 6 -->
+            <rect x="200" y="430" width="400" height="45" rx="8" fill="#2a3b1a" stroke="#84cc16" stroke-width="2"/>
+            <text x="400" y="457" text-anchor="middle" fill="#bef264" font-size="12" font-weight="bold">6. generateToken(user._id) -> JWT token</text>
+            <line x1="400" y1="475" x2="400" y2="495" stroke="#6366f1" stroke-width="2" marker-end="url(#arr2)"/>
+
+            <!-- Response -->
+            <rect x="150" y="495" width="500" height="45" rx="8" fill="#2a1a1a" stroke="#ef4444" stroke-width="2"/>
+            <text x="400" y="522" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="bold">7. res.json({ token: "eyJhbG...", user: {...} })</text>
+        </svg>
+    </div>
+
+    <div class="note">
+        <strong>Frontend stores:</strong> Token in localStorage. Every subsequent request includes it as Authorization: Bearer token.
+    </div>
+</div>
+
+<!-- ============ POLL FLOW ============ -->
+<div class="section" id="poll">
+    <h2>Poll Operations Flow</h2>
+
+    <h3>Create Poll</h3>
+    <div class="flow-container">
+        <div class="flow-box client">Frontend<br><small>POST /api/polls</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box middleware">auth<br><small>Verify token</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box controller">createPoll<br><small>Get data from body</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box model">Poll.create()<br><small>Save to MongoDB</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box server">Response<br><small>{ poll }</small></div>
+    </div>
+
+    <h3>Vote on Poll</h3>
+    <div class="flow-container">
+        <div class="flow-box client">Frontend<br><small>POST /api/polls/:id/vote</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box middleware">auth<br><small>Verify token</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box controller">votePoll<br><small>Check if closed, check existing vote</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box model">poll.votes<br><small>Push/update vote</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box server">Response<br><small>{ poll }</small></div>
+    </div>
+
+    <h3>Vote Logic Inside Controller</h3>
+    <div class="step-flow">
+        <div class="step" data-step="1">Find poll by ID</div>
+        <div class="step" data-step="2">Check if poll is closed -> reject if yes</div>
+        <div class="step" data-step="3">Check if user already voted -> update their vote</div>
+        <div class="step" data-step="4">If new voter -> push vote to votes array</div>
+        <div class="step" data-step="5">Save poll to MongoDB</div>
+    </div>
+
+    <h3>Delete Poll</h3>
+    <div class="flow-container">
+        <div class="flow-box client">Frontend<br><small>DELETE /api/polls/:id</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box middleware">auth<br><small>Get userId</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box controller">deletePoll<br><small>Check creator === userId</small></div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-box model">poll.deleteOne()<br><small>Remove from DB</small></div>
+    </div>
+
+    <div class="note">
+        <strong>Key concept:</strong> Votes are embedded in the Poll document, not separate. This is faster because poll + votes load together in one query.
+    </div>
+</div>
+
+<!-- ============ CONNECTIONS ============ -->
+<div class="section" id="connections">
+    <h2>File Connections - Who Imports What</h2>
+
+    <div class="diagram-container">
+        <svg viewBox="0 0 900 700" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="arr3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                    <polygon points="0 0, 8 3, 0 6" fill="#6366f1"/>
+                </marker>
+            </defs>
+
+            <!-- server.js -->
+            <rect x="330" y="10" width="240" height="40" rx="8" fill="#1a3a1a" stroke="#22c55e" stroke-width="2"/>
+            <text x="450" y="35" text-anchor="middle" fill="#86efac" font-size="13" font-weight="bold">server.js</text>
+
+            <!-- Arrows from server.js -->
+            <line x1="380" y1="50" x2="150" y2="90" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr3)"/>
+            <line x1="420" y1="50" x2="350" y2="90" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr3)"/>
+            <line x1="480" y1="50" x2="550" y2="90" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr3)"/>
+            <line x1="520" y1="50" x2="750" y2="90" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+            <!-- config/db.js -->
+            <rect x="50" y="90" width="200" height="35" rx="8" fill="#1a2744" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="150" y="112" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="bold">config/db.js</text>
+
+            <!-- config/mailer.js -->
+            <rect x="250" y="90" width="200" height="35" rx="8" fill="#1a2744" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="350" y="112" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="bold">config/mailer.js</text>
+
+            <!-- authRoutes.js -->
+            <rect x="450" y="90" width="200" height="35" rx="8" fill="#2a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="550" y="112" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="bold">routes/authRoutes.js</text>
+
+            <!-- pollRoutes.js -->
+            <rect x="650" y="90" width="200" height="35" rx="8" fill="#2a1a1a" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="750" y="112" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="bold">routes/pollRoutes.js</text>
+
+            <!-- Arrows from authRoutes -->
+            <line x1="500" y1="125" x2="250" y2="170" stroke="#a855f7" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="530" y1="125" x2="450" y2="170" stroke="#a855f7" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="560" y1="125" x2="650" y2="170" stroke="#a855f7" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="580" y1="125" x2="800" y2="170" stroke="#f59e0b" stroke-width="1.2" marker-end="url(#arr3)"/>
+
+            <!-- Arrows from pollRoutes -->
+            <line x1="700" y1="125" x2="250" y2="170" stroke="#a855f7" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="730" y1="125" x2="450" y2="170" stroke="#a855f7" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="760" y1="125" x2="650" y2="170" stroke="#a855f7" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="790" y1="125" x2="800" y2="170" stroke="#f59e0b" stroke-width="1.2" marker-end="url(#arr3)"/>
+
+            <!-- Controllers -->
+            <rect x="100" y="170" width="200" height="35" rx="8" fill="#2a1a3b" stroke="#a855f7" stroke-width="1.5"/>
+            <text x="200" y="192" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">authController.js</text>
+
+            <rect x="330" y="170" width="240" height="35" rx="8" fill="#2a1a3b" stroke="#a855f7" stroke-width="1.5"/>
+            <text x="450" y="192" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">passwordController.js</text>
+
+            <rect x="570" y="170" width="200" height="35" rx="8" fill="#2a1a3b" stroke="#a855f7" stroke-width="1.5"/>
+            <text x="670" y="192" text-anchor="middle" fill="#d8b4fe" font-size="11" font-weight="bold">pollController.js</text>
+
+            <!-- Middleware -->
+            <rect x="770" y="170" width="120" height="35" rx="8" fill="#3b2a1a" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="830" y="192" text-anchor="middle" fill="#fcd34d" font-size="11" font-weight="bold">auth.js</text>
+
+            <!-- Arrows from controllers to models + utils -->
+            <line x1="150" y1="205" x2="100" y2="260" stroke="#22c55e" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="180" y1="205" x2="300" y2="260" stroke="#22c55e" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="200" y1="205" x2="500" y2="260" stroke="#84cc16" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="220" y1="205" x2="680" y2="260" stroke="#84cc16" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="230" y1="205" x2="190" y2="260" stroke="#3b82f6" stroke-width="1.2" marker-end="url(#arr3)"/>
+
+            <line x1="400" y1="205" x2="100" y2="260" stroke="#22c55e" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="450" y1="205" x2="500" y2="260" stroke="#84cc16" stroke-width="1.2" marker-end="url(#arr3)"/>
+            <line x1="500" y1="205" x2="680" y2="260" stroke="#84cc16" stroke-width="1.2" marker-end="url(#arr3)"/>
+
+            <line x1="620" y1="205" x2="300" y2="260" stroke="#22c55e" stroke-width="1.2" marker-end="url(#arr3)"/>
+
+            <!-- Models + Utils + Config -->
+            <rect x="30" y="260" width="140" height="35" rx="8" fill="#1a3327" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="100" y="282" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">User.js</text>
+
+            <rect x="200" y="260" width="200" height="35" rx="8" fill="#1a3327" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="300" y="282" text-anchor="middle" fill="#86efac" font-size="11" font-weight="bold">Poll.js + Comment.js</text>
+
+            <rect x="430" y="260" width="140" height="35" rx="8" fill="#2a3b1a" stroke="#84cc16" stroke-width="1.5"/>
+            <text x="500" y="282" text-anchor="middle" fill="#bef264" font-size="11" font-weight="bold">generateOTP.js</text>
+
+            <rect x="600" y="260" width="160" height="35" rx="8" fill="#2a3b1a" stroke="#84cc16" stroke-width="1.5"/>
+            <text x="680" y="282" text-anchor="middle" fill="#bef264" font-size="11" font-weight="bold">utils/mailer.js</text>
+
+            <!-- Arrows from utils/mailer to config/mailer -->
+            <line x1="680" y1="260" x2="350" y2="125" stroke="#3b82f6" stroke-width="1" stroke-dasharray="5" marker-end="url(#arr3)"/>
+
+            <!-- Models to MongoDB -->
+            <line x1="100" y1="295" x2="300" y2="340" stroke="#06b6d4" stroke-width="1.5" marker-end="url(#arr3)"/>
+            <line x1="300" y1="295" x2="300" y2="340" stroke="#06b6d4" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+            <!-- MongoDB -->
+            <rect x="150" y="340" width="300" height="40" rx="8" fill="#1a2a3b" stroke="#06b6d4" stroke-width="2"/>
+            <text x="300" y="365" text-anchor="middle" fill="#67e8f9" font-size="13" font-weight="bold">MONGODB DATABASE</text>
+
+            <!-- Legend -->
+            <rect x="20" y="420" width="860" height="160" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+            <text x="450" y="445" text-anchor="middle" fill="#818cf8" font-size="14" font-weight="bold">IMPORT LEGEND</text>
+
+            <line x1="50" y1="470" x2="100" y2="470" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr3)"/>
+            <text x="110" y="475" fill="#94a3b8" font-size="12">server.js imports config + routes</text>
+
+            <line x1="50" y1="500" x2="100" y2="500" stroke="#a855f7" stroke-width="1.5" marker-end="url(#arr3)"/>
+            <text x="110" y="505" fill="#94a3b8" font-size="12">routes import controllers + auth middleware</text>
+
+            <line x1="50" y1="530" x2="100" y2="530" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arr3)"/>
+            <text x="110" y="535" fill="#94a3b8" font-size="12">controllers import models + utils + config</text>
+
+            <line x1="450" y1="470" x2="500" y2="470" stroke="#84cc16" stroke-width="1.5" marker-end="url(#arr3)"/>
+            <text x="510" y="475" fill="#94a3b8" font-size="12">utils import config (mailer.js)</text>
+
+            <line x1="450" y1="500" x2="500" y2="500" stroke="#06b6d4" stroke-width="1.5" marker-end="url(#arr3)"/>
+            <text x="510" y="505" fill="#94a3b8" font-size="12">models connect to MongoDB</text>
+
+            <line x1="450" y1="530" x2="500" y2="530" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arr3)"/>
+            <text x="510" y="535" fill="#94a3b8" font-size="12">routes use auth middleware for protected routes</text>
+        </svg>
+    </div>
+
+    <h3>Import Chain Summary</h3>
+    <table class="conn-table">
+        <thead>
+            <tr><th>File</th><th>Imports From</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>server.js</td><td>config/db.js, routes/*</td><td>Boot DB, mount routes</td></tr>
+            <tr><td>routes/authRoutes.js</td><td>authController, passwordController, bookmarkController, middleware/auth</td><td>Map auth URLs</td></tr>
+            <tr><td>routes/pollRoutes.js</td><td>pollController, commentController, bookmarkController, middleware/auth</td><td>Map poll URLs</td></tr>
+            <tr><td>authController.js</td><td>User model, generateOTP, sendMail, uploadToCloudinary</td><td>Auth logic</td></tr>
+            <tr><td>passwordController.js</td><td>User model, generateOTP, sendMail</td><td>Password reset logic</td></tr>
+            <tr><td>pollController.js</td><td>Poll model</td><td>Poll CRUD logic</td></tr>
+            <tr><td>commentController.js</td><td>Comment model</td><td>Comment logic</td></tr>
+            <tr><td>bookmarkController.js</td><td>User model</td><td>Bookmark toggle logic</td></tr>
+            <tr><td>utils/mailer.js</td><td>config/mailer.js (transporter)</td><td>Send emails</td></tr>
+            <tr><td>config/mailer.js</td><td>nodemailer</td><td>SMTP connection setup</td></tr>
+            <tr><td>config/cloudinary.js</td><td>cloudinary, multer</td><td>Image upload setup</td></tr>
+            <tr><td>middleware/auth.js</td><td>jsonwebtoken</td><td>Verify JWT tokens</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+function showTab(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
