@@ -6,6 +6,7 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import CreatePollPage from "./pages/CreatePollPage.jsx";
+import PollDetailPage from "./pages/PollDetailPage.jsx";
 
 function App() {
     return (
@@ -19,6 +20,7 @@ function App() {
                     <Route element={<Layout />}>
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/create-poll" element={<CreatePollPage />} />
+                        <Route path="/poll/:id" element={<PollDetailPage />} />
                     </Route>
                     <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
