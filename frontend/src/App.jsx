@@ -4,6 +4,7 @@ import Layout from "./components/Layout.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
 
 function App() {
     return (
@@ -15,7 +16,7 @@ function App() {
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route element={<Layout />}>
-                        {/* Pages wrapped in Layout will go here */}
+                        <Route path="/dashboard" element={<Dashboard />} />
                     </Route>
                     <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
