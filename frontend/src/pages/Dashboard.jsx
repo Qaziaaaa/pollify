@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ThumbsUp, MessageSquare, Eye, BarChart3 } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import api from "../utils/api.js";
+import PollCard from "../components/PollCard.jsx";
 
 export default function Dashboard() {
     const [polls, setPolls] = useState([]);
@@ -32,31 +33,7 @@ export default function Dashboard() {
             <h1 className="text-lg font-bold text-white mb-6 font-['Plus_Jakarta_Sans']">Dashboard</h1>
             <div className="space-y-4">
                 {polls.map((poll) => (
-                    <Link
-                        key={poll._id}
-                        to={`/poll/${poll._id}`}
-                        className="block bg-zinc-900/70 border border-zinc-800/80 rounded-2xl p-5 hover:border-zinc-700 transition-colors"
-                    >
-                        <div className="flex items-start gap-3">
-                            {poll.creator?.avatar && (
-                                <img
-                                    src={poll.creator.avatar}
-                                    alt=""
-                                    className="w-8 h-8 rounded-full mt-0.5"
-                                />
-                            )}
-                            <div className="flex-1 min-w-0">
-                                <h2 className="text-[15px] font-semibold text-zinc-100">{poll.question}</h2>
-                                <p className="text-xs text-zinc-500 mt-1">
-                                    by {poll.creator?.name || "Anonymous"} · {poll.type}
-                                </p>
-                                <div className="flex items-center gap-4 mt-3 text-zinc-500 text-xs">
-                                    <span className="flex items-center gap-1"><ThumbsUp size={12} /> {poll.votes?.length || 0}</span>
-                                    <span className="flex items-center gap-1"><Eye size={12} /> {poll.views || 0}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </Link>
+                    <PollCard key={poll._id} poll={poll} />
                 ))}
                 {polls.length === 0 && (
                     <p className="text-zinc-500 text-sm text-center py-12">
@@ -65,15 +42,14 @@ export default function Dashboard() {
                 )}
             </div>
 
-            {/* Mobile nav at bottom */}
             <div className="fixed bottom-0 left-0 right-0 md:hidden bg-zinc-900 border-t border-zinc-800 flex justify-around py-3 px-4">
                 {[
-                    { to: "/dashboard", label: "Home", Icon: BarChart3 },
-                    { to: "/create-poll", label: "Create", Icon: BarChart3 },
-                    { to: "/profile", label: "Profile", Icon: BarChart3 },
-                ].map(({ to, label, Icon }) => (
+                    { to: "/dashboard", label: "Home" },
+                    { to: "/create-poll", label: "Create" },
+                    { to: "/profile", label: "Profile" },
+                ].map(({ to, label }) => (
                     <Link key={to} to={to} className="flex flex-col items-center text-zinc-500 text-[10px]">
-                        <Icon size={18} />
+                        <BarChart3 size={18} />
                         {label}
                     </Link>
                 ))}
