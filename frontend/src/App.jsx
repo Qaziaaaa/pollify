@@ -7,7 +7,6 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import CreatePollPage from './pages/CreatePollPage'
 import SinglePollPage from './pages/SinglePollPage'
-import AnalyticsPage from './pages/AnalyticsPage'
 import SettingsPage from './pages/SettingsPage'
 import UserProfilePage from './pages/UserProfilePage'
 import MyPollsPage from './pages/MyPollsPage'
@@ -28,7 +27,6 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/create-poll" element={<CreatePollPage />} />
               <Route path="/poll/:id" element={<SinglePollPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/my-polls" element={<MyPollsPage />} />
               <Route path="/voted-polls" element={<VotedPollsPage />} />
