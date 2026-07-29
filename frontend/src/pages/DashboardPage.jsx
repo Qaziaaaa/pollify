@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { PlusSquare, Sparkles, Image, Star, Type, ListChecks } from "lucide-react";
+import { PlusSquare, Sparkles, BarChart3, Image, Star, Type, ListChecks } from "lucide-react";
 import api from "../utils/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { Avatar, PollSkeleton } from "../components/UIElements.jsx";

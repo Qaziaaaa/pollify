@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, PlusSquare, PenLine, CheckCircle2, Bookmark, LogOut, Search } from "lucide-react";
+import { LayoutDashboard, PlusSquare, PenLine, CheckCircle2, Bookmark, LogOut, Search, Settings } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import NotificationBell from "../assets/helpers component/NotificationBell.jsx";
 import RightRail from "./Sidebar.jsx";
@@ -12,6 +12,7 @@ const NAV = [
   { to: "/my-polls", label: "My Polls", Icon: PenLine },
   { to: "/voted-polls", label: "Voted", Icon: CheckCircle2 },
   { to: "/bookmarked-polls", label: "Saved", Icon: Bookmark },
+  { to: "/settings", label: "Settings", Icon: Settings },
 ];
 
 const BOTTOM_NAV = [
