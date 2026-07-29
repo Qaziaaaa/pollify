@@ -6,14 +6,16 @@ import {
     votePoll,
     deletePoll,
     getStats,
+    getTrending,
 } from "../controllers/pollController.js";
 import { addComment, getComments, deleteComment } from "../controllers/commentController.js";
 import { bookmarkPoll } from "../controllers/bookmarkController.js";
-import auth from "../middleware/auth.js";
+import auth, { optionalAuth } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", getPolls);
+router.get("/trending", getTrending);
+router.get("/", optionalAuth, getPolls);
 router.get("/stats", getStats);
 router.get("/:id", getPoll);
 router.post("/", auth, createPoll);

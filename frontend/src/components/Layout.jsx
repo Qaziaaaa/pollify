@@ -1,79 +1,109 @@
-// WHY: This component wraps all pages after login
-// It provides the navbar (top) and sidebar (left) with navigation links
-// The main page content appears in the middle area
-
-import { Link, useNavigate, Outlet, useLocation, Navigate } from "react-router-dom";
-import { LayoutDashboard, PlusSquare, User, LogOut, BarChart3, Settings } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { LayoutDashboard, PlusSquare, PenLine, CheckCircle2, Bookmark, LogOut, Search } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
+import NotificationBell from "../assets/helpers component/NotificationBell.jsx";
+import RightRail from "./Sidebar.jsx";
+import { Avatar } from "./UIElements.jsx";
+import { layoutStyles as ls } from "../assets/dummyStyles";
 
-export default function Layout() {
-    const { user, logout, loading } = useAuth();                     // FIX: added loading
-    const navigate = useNavigate();
-    const location = useLocation();
+const NAV = [
+  { to: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
+  { to: "/create-poll", label: "Create", Icon: PlusSquare },
+  { to: "/my-polls", label: "My Polls", Icon: PenLine },
+  { to: "/voted-polls", label: "Voted", Icon: CheckCircle2 },
+  { to: "/bookmarked-polls", label: "Saved", Icon: Bookmark },
+];
 
-    // FIX: redirect to /login if not authenticated
-    if (!loading && !user) return <Navigate to="/login" replace />;
+const BOTTOM_NAV = [
+  { to: "/dashboard", label: "Home", Icon: LayoutDashboard },
+  { to: "/create-poll", label: "Create", Icon: PlusSquare },
+  { to: "/my-polls", label: "Polls", Icon: PenLine },
+  { to: "/bookmarked-polls", label: "Saved", Icon: Bookmark },
+];
 
-    const handleLogout = () => {
-        logout();
-        navigate("/login");
-    };
+export default function Layout({ children }) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    const navLinks = [
-        { to: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
-        { to: "/create-poll", label: "Create", Icon: PlusSquare },
-        { to: "/profile", label: "Profile", Icon: User },
-        { to: "/analytics", label: "Analytics", Icon: BarChart3 },
-        { to: "/settings", label: "Settings", Icon: Settings },
-    ];
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
-    return (
-        <div className="min-h-screen bg-zinc-950 text-zinc-300 font-['Inter']">
-            {/* Top navbar */}
-            <header className="border-b border-zinc-800 bg-zinc-900/50 px-6 py-3 flex items-center justify-between">
-                <Link to="/dashboard" className="text-xl font-bold text-emerald-400 font-['Plus_Jakarta_Sans']">
-                    Pollify
-                </Link>
-                <div className="flex items-center gap-4 text-sm">
-                    <span className="text-zinc-500">{user?.name || "User"}</span>
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-1.5 text-zinc-400 hover:text-rose-400 transition-colors"
-                    >
-                        <LogOut size={16} /> Logout
-                    </button>
-                </div>
-            </header>
-
-            <div className="flex">
-                {/* Sidebar */}
-                <aside className="w-56 min-h-[calc(100vh-57px)] border-r border-zinc-800 bg-zinc-900/30 p-4 hidden md:block">
-                    <nav className="space-y-1">
-                        {navLinks.map(({ to, label, Icon }) => {
-                            const isActive = location.pathname === to;
-                            return (
-                                <Link
-                                    key={to}
-                                    to={to}
-                                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors ${
-                                        isActive
-                                            ? "bg-emerald-500/10 text-emerald-400 font-medium"
-                                            : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
-                                    }`}
-                                >
-                                    <Icon size={18} />
-                                    {label}
-                                </Link>
-                            );
-                        })}
-                    </nav>
-                </aside>
-
-                {/* Main content */}
-                <main className="flex-1 p-6 max-w-3xl mx-auto w-full">
-                    <Outlet />
-                </main>
+  return (
+    <div className={ls.container}>
+      <header className={ls.header}>
+        <div className={ls.headerInner}>
+          <Link to="/dashboard" className={ls.logoLink}>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center text-white text-xs font-bold shadow-lg shadow-emerald-500/30">
+              P
             </div>
+            <span className={ls.logoSpan}>Pollify</span>
+          </Link>
+
+          <div className={ls.searchDesktop}>
+            <Search size={14} className={ls.searchIcon} />
+            <input className={ls.searchInput} placeholder="Search polls..." type="text" />
+          </div>
+
+          <div className={ls.rightCluster}>
+            <Link to="/create-poll" className={ls.createButton}>
+              <PlusSquare size={14} /> Create Poll
+            </Link>
+            <NotificationBell />
+            <Avatar user={user || {}} className={ls.avatarClass} />
+          </div>
         </div>
-    );
+      </header>
+
+      <div className={ls.bodyContainer}>
+        <aside className={ls.leftSidebar}>
+          <nav className={ls.navContainer}>
+            {NAV.map(({ to, label, Icon }) => {
+              const isActive = location.pathname === to;
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`${ls.sideLinkBase} ${isActive ? ls.sideLinkActive : ls.sideLinkInactive}`}
+                >
+                  <Icon size={16} />
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className={ls.sidebarBottom}>
+            <button onClick={handleLogout} className={ls.logoutButton}>
+              <LogOut size={16} /> Logout
+            </button>
+          </div>
+        </aside>
+
+        <main className={ls.mainContent}>{children}</main>
+
+        <aside className={ls.rightRail}>
+          <RightRail />
+        </aside>
+      </div>
+
+      <nav className={ls.bottomNav}>
+        {BOTTOM_NAV.map(({ to, label, Icon }) => {
+          const isActive = location.pathname === to;
+          return (
+            <Link
+              key={to}
+              to={to}
+              className={`${ls.bottomLinkBase} ${isActive ? ls.bottomLinkActive : ls.bottomLinkInactive}`}
+            >
+              <Icon size={18} />
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
+  );
 }

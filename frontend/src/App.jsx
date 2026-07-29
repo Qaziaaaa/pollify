@@ -1,38 +1,47 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext.jsx";
-import Layout from "./components/Layout.jsx";
-import LoginPage from "./pages/LoginPage.jsx";
-import RegisterPage from "./pages/RegisterPage.jsx";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
-import CreatePollPage from "./pages/CreatePollPage.jsx";
-import PollDetailPage from "./pages/PollDetailPage.jsx";
-import ProfilePage from "./pages/ProfilePage.jsx";
-import AnalyticsPage from "./pages/AnalyticsPage.jsx";
-import SettingsPage from "./pages/SettingsPage.jsx";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext.jsx'
+import { ToastProvider } from './context/ToastContext.jsx'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import DashboardPage from './pages/DashboardPage'
+import CreatePollPage from './pages/CreatePollPage'
+import SinglePollPage from './pages/SinglePollPage'
+import AnalyticsPage from './pages/AnalyticsPage'
+import SettingsPage from './pages/SettingsPage'
+import UserProfilePage from './pages/UserProfilePage'
+import MyPollsPage from './pages/MyPollsPage'
+import VotedPollsPage from './pages/VotedPollsPage'
+import BookmarkedPollsPage from './pages/BookmarkedPollsPage'
 
 function App() {
-    return (
-        <BrowserRouter>
-            <AuthProvider>
-                <Routes>
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    <Route element={<Layout />}>
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/create-poll" element={<CreatePollPage />} />
-                        <Route path="/poll/:id" element={<PollDetailPage />} />
-                        <Route path="/profile" element={<ProfilePage />} />
-                        <Route path="/analytics" element={<AnalyticsPage />} />
-                        <Route path="/settings" element={<SettingsPage />} />
-                    </Route>
-                    <Route path="*" element={<Navigate to="/login" replace />} />
-                </Routes>
-            </AuthProvider>
-        </BrowserRouter>
-    );
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <ToastProvider>
+          <div className="min-h-screen bg-zinc-950 text-zinc-300" style={{ fontFamily: 'Inter, sans-serif' }}>
+            <Routes>
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/create-poll" element={<CreatePollPage />} />
+              <Route path="/poll/:id" element={<SinglePollPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/my-polls" element={<MyPollsPage />} />
+              <Route path="/voted-polls" element={<VotedPollsPage />} />
+              <Route path="/bookmarked-polls" element={<BookmarkedPollsPage />} />
+              <Route path="/profile/:id" element={<UserProfilePage />} />
+              <Route path="/profile" element={<UserProfilePage />} />
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </div>
+        </ToastProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  )
 }
 
-export default App;
+export default App

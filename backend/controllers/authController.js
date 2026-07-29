@@ -43,18 +43,28 @@ export const register = async (req, res) => {
             }
         }
 
+        const otp = generateOTP();
         const user = await User.create({
             name,
             email,
             username,
             password,
             avatar,
-            isVerified: true,
+            isVerified: false,
+            otp: { code: otp, expiresAt: expireOTP() },
         });
 
-        const token = generateToken(user._id);
+        const emailSent = await sendMail({
+            to: user.email,
+            subject: `Your Pollify OTP: ${otp}`,
+            text: `Welcome to Pollify! Your verification OTP is ${otp}. It expires in 10 minutes.`,
+        });
 
-        res.status(201).json({ token, user: clean(user) });
+        if (!emailSent) {
+            return res.status(500).json({ message: "Failed to send verification email. Please check your email address and try again." });
+        }
+
+        res.status(201).json({ message: "OTP sent to your email", email: user.email });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

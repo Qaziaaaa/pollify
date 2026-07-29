@@ -9,6 +9,7 @@ import {
 } from "../controllers/authController.js";
 import {
     forgotPassword,
+    verifyResetOtp,
     resetPassword,
 } from "../controllers/passwordController.js";
 import { getBookmarks } from "../controllers/bookmarkController.js";
@@ -24,6 +25,7 @@ router.put("/profile", auth, updateProfile);
 router.put("/password", auth, updatePassword);
 router.get("/bookmarks", auth, getBookmarks);
 router.post("/forgot-password", forgotPassword);
+router.post("/verify-reset-otp", verifyResetOtp);
 router.post("/reset-password", resetPassword);
 
 export default router;

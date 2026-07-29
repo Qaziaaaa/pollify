@@ -2,6 +2,24 @@ import User from "../models/User.js";
 import { generateOTP, expireOTP, otpValid } from "../utils/generateOTP.js";
 import sendMail from "../utils/mailer.js";
 
+// @desc    Verify reset OTP
+// @route   POST /api/auth/verify-reset-otp
+export const verifyResetOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        if (!otpValid(user, otp)) {
+            return res.status(400).json({ message: "Invalid or expired OTP" });
+        }
+        res.json({ message: "OTP verified" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Forgot password - send OTP
 // @route   POST /api/auth/forgot-password
 export const forgotPassword = async (req, res) => {
@@ -17,11 +35,15 @@ export const forgotPassword = async (req, res) => {
         user.otp = { code: otp, expiresAt: expireOTP() };
         await user.save();
 
-        await sendMail({
+        const emailSent = await sendMail({
             to: user.email,
             subject: `Password Reset OTP: ${otp}`,
             text: `Your OTP is ${otp}. It expires in 10 minutes.`,
         });
+
+        if (!emailSent) {
+            return res.status(500).json({ message: "Failed to send OTP email" });
+        }
 
         res.json({ message: "OTP sent to your email" });
     } catch (error) {

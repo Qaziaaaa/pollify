@@ -17,4 +17,19 @@ const auth = (req, res, next) => {
     }
 };
 
+// Optional auth: sets req.userId if token present, never blocks
+export const optionalAuth = (req, _res, next) => {
+    const header = req.headers.authorization || "";
+    const token = header.startsWith("Bearer ") ? header.split(" ")[1] : null;
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.userId = decoded.id;
+        } catch {
+            // ignore invalid token
+        }
+    }
+    next();
+};
+
 export default auth;
