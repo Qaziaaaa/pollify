@@ -83,7 +83,7 @@ export default function BookmarkedPollsPage() {
                   vote={handleVote}
                   unvote={handleUnvote}
                   bookmark={toggleBookmark}
-                  owner={poll.creator?._id === user._id || poll.creator === user._id}
+                  owner={String(poll.creator?._id || poll.creator) === String(user._id)}
                   edit={handleEdit}
                   close={handleClose}
                   remove={handleDelete}

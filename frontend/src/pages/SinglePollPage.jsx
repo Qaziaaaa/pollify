@@ -65,7 +65,7 @@ export default function SinglePollPage() {
 
   if (loading) return <Layout><PollSkeleton /></Layout>;
 
-  const isOwner = poll && user && (poll.creator?._id === user._id || poll.creator === user._id);
+  const isOwner = poll && user && (String(poll.creator?._id || poll.creator) === String(user._id));
 
   return (
     <Layout>

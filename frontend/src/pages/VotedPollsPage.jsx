@@ -74,7 +74,7 @@ export default function VotedPollsPage() {
           {polls.length > 0 ? (
             <div className="space-y-3">
               {polls.map((poll) => (
-                <PollCard key={poll._id} poll={poll} vote={handleVote} unvote={handleUnvote} bookmark={toggleBookmark} owner={poll.creator?._id === user._id || poll.creator === user._id} edit={handleEdit} close={handleClose} remove={handleDelete} />
+                <PollCard key={poll._id} poll={poll} vote={handleVote} unvote={handleUnvote} bookmark={toggleBookmark} owner={String(poll.creator?._id || poll.creator) === String(user._id)} edit={handleEdit} close={handleClose} remove={handleDelete} />
               ))}
             </div>
           ) : (

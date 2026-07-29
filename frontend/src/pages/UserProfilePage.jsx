@@ -154,7 +154,7 @@ export default function UserProfilePage() {
       {polls.length > 0 ? (
         <div className="space-y-3">
           {polls.map((poll) => (
-            <PollCard key={poll._id} poll={poll} vote={handleVote} unvote={handleUnvote} bookmark={toggleBookmark} owner={poll.creator?._id === currentUser?._id || poll.creator === currentUser?._id} edit={handleEdit} close={handleClose} remove={handleDelete} />
+            <PollCard key={poll._id} poll={poll} vote={handleVote} unvote={handleUnvote} bookmark={toggleBookmark} owner={String(poll.creator?._id || poll.creator) === String(currentUser?._id)} edit={handleEdit} close={handleClose} remove={handleDelete} />
           ))}
         </div>
       ) : (

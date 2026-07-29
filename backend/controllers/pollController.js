@@ -78,13 +78,15 @@ export const createPoll = async (req, res) => {
                 : [];
         }
 
-        const poll = await Poll.create({
+        let poll = await Poll.create({
             creator: req.userId,
             question,
             type,
             options: normalized,
             category,
         });
+
+        poll = await Poll.findById(poll._id).populate("creator", "name username avatar");
 
         res.status(201).json({ poll });
     } catch (error) {
