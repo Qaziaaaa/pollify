@@ -303,7 +303,8 @@ export const editPoll = async (req, res) => {
         if (question) poll.question = question;
         if (category) poll.category = category;
         await poll.save();
-        res.json({ poll });
+        const updated = await Poll.findById(poll._id).populate("creator", "name username avatar");
+        res.json({ poll: updated });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

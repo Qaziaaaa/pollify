@@ -87,6 +87,7 @@ export default function PollCard({
   const [editing, setEditing] = useState(false);
   const shareRef = useRef(null);
 
+
   useEffect(() => {
     if (!showShare) return;
     const handler = (e) => { if (shareRef.current && !shareRef.current.contains(e.target)) setShowShare(false); };
@@ -104,7 +105,9 @@ export default function PollCard({
     setEditing(true);
   };
   const saveEdit = async () => {
-    await edit(poll._id, { question: eq, category: ecat });
+    try {
+      await edit(poll._id, { question: eq, category: ecat });
+    } catch {}
     setEditing(false);
   };
 
