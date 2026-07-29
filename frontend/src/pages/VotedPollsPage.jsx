@@ -41,6 +41,27 @@ export default function VotedPollsPage() {
     try { await api.post(`/polls/${pollId}/bookmark`); } catch {}
   };
 
+  const handleEdit = async (pollId, data) => {
+    try {
+      await api.put(`/polls/${pollId}`, data);
+      setPolls((prev) => prev.map((p) => (p._id === pollId ? { ...p, ...data } : p)));
+    } catch {}
+  };
+
+  const handleClose = async (pollId) => {
+    try {
+      const res = await api.patch(`/polls/${pollId}/close`);
+      setPolls((prev) => prev.map((p) => (p._id === pollId ? { ...p, closed: res.poll.closed } : p)));
+    } catch {}
+  };
+
+  const handleDelete = async (pollId) => {
+    try {
+      await api.delete(`/polls/${pollId}`);
+      setPolls((prev) => prev.filter((p) => p._id !== pollId));
+    } catch {}
+  };
+
   if (authLoading || !user) return null;
 
   return (
@@ -53,7 +74,7 @@ export default function VotedPollsPage() {
           {polls.length > 0 ? (
             <div className="space-y-3">
               {polls.map((poll) => (
-                <PollCard key={poll._id} poll={poll} vote={handleVote} unvote={handleUnvote} bookmark={toggleBookmark} />
+                <PollCard key={poll._id} poll={poll} vote={handleVote} unvote={handleUnvote} bookmark={toggleBookmark} owner={poll.creator?._id === user._id || poll.creator === user._id} edit={handleEdit} close={handleClose} remove={handleDelete} />
               ))}
             </div>
           ) : (

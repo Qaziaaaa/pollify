@@ -8,6 +8,7 @@ import {
   Lock,
   Pencil,
   RotateCcw,
+  Trash2,
 } from "lucide-react";
 import PollVote from "./PollVote.jsx";
 import Comments from "./Comments.jsx";
@@ -159,10 +160,10 @@ export default function PollCard({
               )}
             </button>
             <button
-              onClick={() => remove(poll._id)}
+              onClick={() => { if (window.confirm("Delete this poll?")) remove(poll._id); }}
               className={s.ownerDelete}
             >
-              Delete
+              <Trash2 size={11} /> Delete
             </button>
           </div>
         )}

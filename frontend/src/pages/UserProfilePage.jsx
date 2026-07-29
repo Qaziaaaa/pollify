@@ -68,6 +68,27 @@ export default function UserProfilePage() {
     try { await api.post(`/polls/${pollId}/bookmark`); } catch {}
   }, []);
 
+  const handleEdit = useCallback(async (pollId, data) => {
+    try {
+      await api.put(`/polls/${pollId}`, data);
+      setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) => p._id === pollId ? { ...p, ...data } : p) } : prev);
+    } catch {}
+  }, []);
+
+  const handleClose = useCallback(async (pollId) => {
+    try {
+      const res = await api.patch(`/polls/${pollId}/close`);
+      setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) => p._id === pollId ? { ...p, closed: res.poll.closed } : p) } : prev);
+    } catch {}
+  }, []);
+
+  const handleDelete = useCallback(async (pollId) => {
+    try {
+      await api.delete(`/polls/${pollId}`);
+      setProfile((prev) => prev ? { ...prev, polls: prev.polls.filter((p) => p._id !== pollId) } : prev);
+    } catch {}
+  }, []);
+
   if (loading) return <Layout><PollSkeleton /></Layout>;
   if (error) return <Layout><div className="text-center py-16 text-zinc-600 text-sm">{error}</div></Layout>;
   if (!profile || !profile.user) return <Layout><div className="text-center py-16 text-zinc-600 text-sm">User not found</div></Layout>;
@@ -133,7 +154,7 @@ export default function UserProfilePage() {
       {polls.length > 0 ? (
         <div className="space-y-3">
           {polls.map((poll) => (
-            <PollCard key={poll._id} poll={poll} vote={handleVote} unvote={handleUnvote} bookmark={toggleBookmark} />
+            <PollCard key={poll._id} poll={poll} vote={handleVote} unvote={handleUnvote} bookmark={toggleBookmark} owner={poll.creator?._id === currentUser?._id || poll.creator === currentUser?._id} edit={handleEdit} close={handleClose} remove={handleDelete} />
           ))}
         </div>
       ) : (
