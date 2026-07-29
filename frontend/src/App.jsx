@@ -35,7 +35,6 @@ function App() {
               <Route path="/bookmarked-polls" element={<BookmarkedPollsPage />} />
               <Route path="/profile/:id" element={<UserProfilePage />} />
               <Route path="/profile" element={<UserProfilePage />} />
-              <Route path="/poll/:id/analytics" element={<AnalyticsPage />} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </div>

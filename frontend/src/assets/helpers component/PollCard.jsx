@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowBigUp,
   Bookmark,
   MessageCircle,
-  BarChart2,
   Lock,
   Pencil,
   RotateCcw,
   Trash2,
+  Share2,
+  Check,
+  Copy,
 } from "lucide-react";
 import PollVote from "./PollVote.jsx";
 import Comments from "./Comments.jsx";
@@ -80,7 +82,17 @@ export default function PollCard({
 }) {
   const voted = poll.myVote !== null && poll.myVote !== undefined;
   const [showComments, setShowComments] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
+  const shareRef = useRef(null);
+
+  useEffect(() => {
+    if (!showShare) return;
+    const handler = (e) => { if (shareRef.current && !shareRef.current.contains(e.target)) setShowShare(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showShare]);
   const [eq, setEq] = useState("");
   const [ecat, setEcat] = useState("");
   const u = poll.creator || {};
@@ -94,6 +106,17 @@ export default function PollCard({
   const saveEdit = async () => {
     await edit(poll._id, { question: eq, category: ecat });
     setEditing(false);
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/poll/${poll._id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => { setCopied(false); setShowShare(false); }, 1500);
+    } catch {
+      prompt("Copy this link:", url);
+    }
   };
 
   return (
@@ -132,39 +155,33 @@ export default function PollCard({
         {owner && !editing && (
           <div className={s.ownerControls}>
             {edit && (
-              <button
-                onClick={startEdit}
-                className={s.ownerButton}
-              >
-                <Pencil size={11} /> Edit
+              <button onClick={startEdit} title="Edit" className={s.ownerButton}>
+                <Pencil size={13} />
               </button>
             )}
-            <Link
-              to={`/poll/${poll._id}/analytics`}
-              className={s.ownerAnalytics}
-            >
-              <BarChart2 size={11} /> Analytics
-            </Link>
-            <button
-              onClick={() => close(poll._id)}
-              className={s.ownerButton}
-            >
-              {poll.closed ? (
-                <>
-                  <RotateCcw size={11} /> Reopen
-                </>
-              ) : (
-                <>
-                  <Lock size={11} /> Close
-                </>
+            <div className="relative" ref={shareRef}>
+              <button onClick={() => setShowShare(!showShare)} title="Share" className={s.ownerButton}>
+                <Share2 size={13} />
+              </button>
+              {showShare && (
+                <div className={s.sharePopover}>
+                  <button onClick={handleShare} className={s.shareOption}>
+                    {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                    <span>{copied ? "Copied!" : "Copy Link"}</span>
+                  </button>
+                </div>
               )}
-            </button>
-            <button
-              onClick={() => { if (window.confirm("Delete this poll?")) remove(poll._id); }}
-              className={s.ownerDelete}
-            >
-              <Trash2 size={11} /> Delete
-            </button>
+            </div>
+            {close && (
+              <button onClick={() => close(poll._id)} title={poll.closed ? "Reopen" : "Close"} className={s.ownerButton}>
+                {poll.closed ? <RotateCcw size={13} /> : <Lock size={13} />}
+              </button>
+            )}
+            {remove && (
+              <button onClick={() => { if (window.confirm("Delete this poll?")) remove(poll._id); }} title="Delete" className={s.ownerDelete}>
+                <Trash2 size={13} />
+              </button>
+            )}
           </div>
         )}
 
