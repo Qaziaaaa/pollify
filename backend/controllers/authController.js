@@ -1,8 +1,11 @@
 import User from "../models/User.js";
+import Poll from "../models/Poll.js";
+import Comment from "../models/Comment.js";
 import jwt from "jsonwebtoken";
 import { generateOTP, expireOTP, otpValid } from "../utils/generateOTP.js";
 import sendMail from "../utils/mailer.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
+import { computeResults, enrichPoll } from "../utils/computeResults.js";
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
@@ -23,9 +26,14 @@ export const register = async (req, res) => {
     try {
         const { name, email, username, password } = req.body;
 
-        const userExists = await User.findOne({ $or: [{ email }, { username }] });
-        if (userExists) {
-            return res.status(400).json({ message: "User already exists" });
+        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+        if (existingUser) {
+            // FIX: if account exists but not verified, delete it so user can re-register
+            if (!existingUser.isVerified) {
+                await User.deleteOne({ _id: existingUser._id });
+            } else {
+                return res.status(400).json({ message: "User already exists" });
+            }
         }
 
         let avatar = "";
@@ -44,16 +52,21 @@ export const register = async (req, res) => {
             username,
             password,
             avatar,
+            isVerified: false,
             otp: { code: otp, expiresAt: expireOTP() },
         });
 
-        await sendMail({
-            to: email,
-            subject: `Your OTP is ${otp}`,
-            text: `Use this code to verify your account: ${otp}`,
+        const emailSent = await sendMail({
+            to: user.email,
+            subject: `Your Pollify OTP: ${otp}`,
+            text: `Welcome to Pollify! Your verification OTP is ${otp}. It expires in 10 minutes.`,
         });
 
-        res.status(201).json({ message: "OTP sent to email", email });
+        if (!emailSent) {
+            return res.status(500).json({ message: "Failed to send verification email. Please check your email address and try again." });
+        }
+
+        res.status(201).json({ message: "OTP sent to your email", email: user.email });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -116,7 +129,90 @@ export const getProfile = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
+
+        const polls = await Poll.find({ creator: req.userId })
+            .populate("creator", "name username avatar")
+            .sort({ createdAt: -1 });
+
+        const commentCounts = await Promise.all(
+            polls.map((p) => Comment.countDocuments({ poll: p._id }))
+        );
+
+        const enriched = polls.map((poll, idx) => {
+            const p = enrichPoll(poll, null);
+            p.comments = commentCounts[idx] || 0;
+            return p;
+        });
+
+        // Count followers (users who have this user in their following array)
+        const followers = await User.countDocuments({ following: req.userId });
+
+        res.json({
+            user: {
+                ...clean(user),
+                pollCount: polls.length,
+                polls: enriched,
+            },
+            stats: {
+                created: polls.length,
+                voted: await Poll.countDocuments({ "votes.user": req.userId }),
+                followers,
+                following: user.following?.length || 0,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update profile
+// @route   PUT /api/auth/profile
+export const updateProfile = async (req, res) => {
+    try {
+        const { name, username, bio } = req.body;
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (username && username !== user.username) {
+            const taken = await User.findOne({ username });
+            if (taken) {
+                return res.status(400).json({ message: "Username already taken" });
+            }
+            user.username = username;
+        }
+        if (name) user.name = name;
+        if (bio !== undefined) user.bio = bio;
+        if (req.file) {
+            try {
+                user.avatar = await uploadToCloudinary(req.file.buffer);
+            } catch (e) {
+                console.warn("Avatar upload skipped:", e.message);
+            }
+        }
+        await user.save();
         res.json({ user: clean(user) });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update password
+// @route   PUT /api/auth/password
+export const updatePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        if (!(await user.matchPassword(currentPassword))) {
+            return res.status(400).json({ message: "Current password is incorrect" });
+        }
+        user.password = newPassword;
+        await user.save();
+        res.json({ message: "Password updated successfully" });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

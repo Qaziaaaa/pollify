@@ -1,4 +1,6 @@
 import Comment from "../models/Comment.js";
+import Poll from "../models/Poll.js";
+import Notification from "../models/Notification.js";
 
 // @desc    Add comment to poll
 // @route   POST /api/polls/:id/comments
@@ -12,6 +14,17 @@ export const addComment = async (req, res) => {
             text,
             parentComment: parentComment || null,
         });
+
+        // Notify poll creator on comment (skip if commenter is creator)
+        const poll = await Poll.findById(req.params.id).select("creator").lean();
+        if (poll && String(poll.creator) !== String(req.userId)) {
+            await Notification.create({
+                recipient: poll.creator,
+                actor: req.userId,
+                type: "comment",
+                poll: req.params.id,
+            }).catch(() => {});
+        }
 
         res.status(201).json({ comment });
     } catch (error) {
@@ -34,10 +47,10 @@ export const getComments = async (req, res) => {
 };
 
 // @desc    Delete comment
-// @route   DELETE /api/comments/:id
+// @route   DELETE /api/polls/:id/comments/:commentId
 export const deleteComment = async (req, res) => {
     try {
-        const comment = await Comment.findById(req.params.id);
+        const comment = await Comment.findById(req.params.commentId);
 
         if (!comment) {
             return res.status(404).json({ message: "Comment not found" });

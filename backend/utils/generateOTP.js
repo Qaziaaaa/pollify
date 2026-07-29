@@ -7,5 +7,5 @@ export const expireOTP = () => {
 };
 
 export const otpValid = (user, otp) => {
-    return user.otp.code === otp && user.otp.expiresAt && user.otp.expiresAt > new Date();
+    return String(user.otp.code) === String(otp) && user.otp.expiresAt && new Date(user.otp.expiresAt) > new Date();
 };

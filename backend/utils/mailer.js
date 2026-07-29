@@ -1,9 +1,9 @@
-import transporter from "../config/mailer.js";
+import getTransporter from "../config/mailer.js";
 
 const sendMail = async ({ to, subject, text }) => {
     try {
-        await transporter.sendMail({
-            from: process.env.SMTP_USER,
+        await getTransporter().sendMail({
+            from: process.env.EMAIL_FROM,
             to,
             subject,
             text,

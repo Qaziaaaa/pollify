@@ -1,21 +1,23 @@
 import User from "../models/User.js";
+import Comment from "../models/Comment.js";
+import { enrichPoll } from "../utils/computeResults.js";
 
-// @desc    Bookmark a poll
+// @desc    Bookmark/unbookmark a poll
 // @route   POST /api/polls/:id/bookmark
 export const bookmarkPoll = async (req, res) => {
     try {
         const user = await User.findById(req.userId);
         const pollId = req.params.id;
 
-        if (user.bookmarks.includes(pollId)) {
-            user.bookmarks = user.bookmarks.filter((id) => id.toString() !== pollId);
+        if (user.bookmarks.some((id) => String(id) === String(pollId))) {
+            user.bookmarks = user.bookmarks.filter((id) => String(id) !== String(pollId));
             await user.save();
-            return res.json({ message: "Bookmark removed" });
+            return res.json({ bookmarked: false });
         }
 
         user.bookmarks.push(pollId);
         await user.save();
-        res.json({ message: "Poll bookmarked" });
+        res.json({ bookmarked: true });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -30,7 +32,16 @@ export const getBookmarks = async (req, res) => {
             populate: { path: "creator", select: "name username avatar" },
         });
 
-        res.json({ bookmarks: user.bookmarks });
+        const enriched = await Promise.all(
+            (user.bookmarks || []).map(async (poll) => {
+                const p = enrichPoll(poll, req.userId);
+                p.comments = await Comment.countDocuments({ poll: poll._id });
+                p.isBookmarked = true;
+                return p;
+            })
+        );
+
+        res.json({ bookmarks: enriched });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
