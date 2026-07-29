@@ -15,9 +15,24 @@ export function AuthProvider({ children }) {
         const token = localStorage.getItem("token");
         const savedUser = localStorage.getItem("user");
         if (token && savedUser) {
-            setUser(JSON.parse(savedUser));
+            // FIX: validate token against backend instead of blindly trusting localStorage
+            fetch("http://localhost:5000/api/auth/profile", {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+                .then((res) => {
+                    if (!res.ok) throw new Error();
+                    return res.json();
+                })
+                .then((data) => setUser(data.user))
+                // FIX: clear stale token if backend rejects it
+                .catch(() => {
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("user");
+                })
+                .finally(() => setLoading(false));
+        } else {
+            setLoading(false);
         }
-        setLoading(false);
     }, []);
 
     const login = (token, userData) => {

@@ -2,14 +2,17 @@
 // It provides the navbar (top) and sidebar (left) with navigation links
 // The main page content appears in the middle area
 
-import { Link, useNavigate, Outlet, useLocation } from "react-router-dom";
+import { Link, useNavigate, Outlet, useLocation, Navigate } from "react-router-dom";
 import { LayoutDashboard, PlusSquare, User, LogOut, BarChart3, Settings } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Layout() {
-    const { user, logout } = useAuth();
+    const { user, logout, loading } = useAuth();                     // FIX: added loading
     const navigate = useNavigate();
     const location = useLocation();
+
+    // FIX: redirect to /login if not authenticated
+    if (!loading && !user) return <Navigate to="/login" replace />;
 
     const handleLogout = () => {
         logout();

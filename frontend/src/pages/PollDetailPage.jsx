@@ -22,7 +22,7 @@ export default function PollDetailPage() {
                 setPoll(pollRes.poll);
                 setComments(commentRes.comments || []);
             })
-            .catch(() => {})
+            .catch((err) => console.error("Poll detail fetch failed:", err))
             .finally(() => setLoading(false));
     }, [id]);
 

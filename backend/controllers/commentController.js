@@ -34,10 +34,10 @@ export const getComments = async (req, res) => {
 };
 
 // @desc    Delete comment
-// @route   DELETE /api/comments/:id
+// @route   DELETE /api/polls/:id/comments/:commentId
 export const deleteComment = async (req, res) => {
     try {
-        const comment = await Comment.findById(req.params.id);
+        const comment = await Comment.findById(req.params.commentId);
 
         if (!comment) {
             return res.status(404).json({ message: "Comment not found" });

@@ -15,10 +15,10 @@ export default function ProfilePage() {
     useEffect(() => {
         api.get("/auth/profile")
             .then((res) => setProfile(res.user))
-            .catch(() => {});
+            .catch((err) => console.error("Profile fetch failed:", err));
         api.get("/auth/bookmarks")
             .then((res) => setBookmarks(res.bookmarks || []))
-            .catch(() => {});
+            .catch((err) => console.error("Bookmarks fetch failed:", err));
     }, []);
 
     const handleLogout = () => {

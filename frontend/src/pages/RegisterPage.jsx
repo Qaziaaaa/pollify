@@ -2,15 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import api from "../utils/api.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function RegisterPage() {
     const [form, setForm] = useState({ name: "", username: "", email: "", password: "" });
     const [showPw, setShowPw] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const [otpStep, setOtpStep] = useState(false);
-    const [otp, setOtp] = useState("");
-    const [email, setEmail] = useState("");
+    const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleRegister = async (e) => {
@@ -18,9 +17,9 @@ export default function RegisterPage() {
         setError("");
         setLoading(true);
         try {
-            await api.post("/auth/register", form);
-            setEmail(form.email);
-            setOtpStep(true);
+            const res = await api.post("/auth/register", form);
+            login(res.token, res.user);
+            navigate("/dashboard");
         } catch (err) {
             setError(err.message || "Registration failed");
         } finally {
@@ -28,59 +27,7 @@ export default function RegisterPage() {
         }
     };
 
-    const handleVerify = async (e) => {
-        e.preventDefault();
-        setError("");
-        setLoading(true);
-        try {
-            await api.post("/auth/verify", { email, otp });
-            navigate("/login");
-        } catch (err) {
-            setError(err.message || "Verification failed");
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const strength = Math.min(4, Math.floor(form.password.length / 3));
-
-    if (otpStep) {
-        return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-8 font-['Inter']">
-                <div className="w-full max-w-sm">
-                    <div className="text-2xl font-bold text-emerald-400 text-center mb-8 font-['Plus_Jakarta_Sans']">Pollify</div>
-                    <h2 className="text-2xl font-bold text-white text-center">Check your email</h2>
-                    <p className="text-zinc-400 text-sm text-center mt-2">We sent a 6-digit code to {email}</p>
-
-                    {error && (
-                        <div className="mt-4 flex items-center gap-2 bg-rose-500/10 border border-rose-500/20 rounded-lg px-4 py-3 text-sm text-rose-400">
-                            <AlertCircle size={14} />
-                            <span>{error}</span>
-                        </div>
-                    )}
-
-                    <form onSubmit={handleVerify} className="mt-6 space-y-4">
-                        <input
-                            type="text"
-                            placeholder="Enter OTP"
-                            maxLength={6}
-                            className="w-full rounded-xl border border-zinc-700/80 bg-zinc-800/50 px-4 py-3 text-center text-2xl tracking-[8px] text-white placeholder:text-zinc-600 outline-none focus:border-emerald-500/60"
-                            value={otp}
-                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                            required
-                        />
-                        <button
-                            type="submit"
-                            disabled={loading || otp.length !== 6}
-                            className="w-full rounded-xl px-4 py-3 text-sm font-bold bg-emerald-500 text-white hover:bg-emerald-400 disabled:opacity-50 transition-all shadow-lg shadow-emerald-500/25"
-                        >
-                            {loading ? "Verifying…" : "Verify Email"}
-                        </button>
-                    </form>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-zinc-950 flex font-['Inter']">

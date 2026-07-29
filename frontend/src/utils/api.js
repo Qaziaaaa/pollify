@@ -12,7 +12,13 @@ async function request(method, path, data = null) {
     const config = { method, headers };
     if (data && method !== "GET") config.body = JSON.stringify(data);
 
-    const res = await fetch(`${BASE_URL}${path}`, config);
+    let res;
+    try {
+        res = await fetch(`${BASE_URL}${path}`, config);
+    } catch {
+        // FIX: show a clear message instead of raw "TypeError: Failed to fetch"
+        throw new Error("Cannot reach server. Make sure the backend is running.");
+    }
     const json = await res.json();
 
     if (!res.ok) throw new Error(json.message || "Request failed");

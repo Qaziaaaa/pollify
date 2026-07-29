@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Poll from "../models/Poll.js";
 import jwt from "jsonwebtoken";
 import { generateOTP, expireOTP, otpValid } from "../utils/generateOTP.js";
 import sendMail from "../utils/mailer.js";
@@ -23,9 +24,14 @@ export const register = async (req, res) => {
     try {
         const { name, email, username, password } = req.body;
 
-        const userExists = await User.findOne({ $or: [{ email }, { username }] });
-        if (userExists) {
-            return res.status(400).json({ message: "User already exists" });
+        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+        if (existingUser) {
+            // FIX: if account exists but not verified, delete it so user can re-register
+            if (!existingUser.isVerified) {
+                await User.deleteOne({ _id: existingUser._id });
+            } else {
+                return res.status(400).json({ message: "User already exists" });
+            }
         }
 
         let avatar = "";
@@ -37,23 +43,18 @@ export const register = async (req, res) => {
             }
         }
 
-        const otp = generateOTP();
         const user = await User.create({
             name,
             email,
             username,
             password,
             avatar,
-            otp: { code: otp, expiresAt: expireOTP() },
+            isVerified: true,
         });
 
-        await sendMail({
-            to: email,
-            subject: `Your OTP is ${otp}`,
-            text: `Use this code to verify your account: ${otp}`,
-        });
+        const token = generateToken(user._id);
 
-        res.status(201).json({ message: "OTP sent to email", email });
+        res.status(201).json({ token, user: clean(user) });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -116,7 +117,50 @@ export const getProfile = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
+
+        const polls = await Poll.find({ creator: req.userId })
+            .populate("creator", "name username avatar")
+            .sort({ createdAt: -1 });
+
+        res.json({ user: { ...clean(user), created: polls } });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update profile
+// @route   PUT /api/auth/profile
+export const updateProfile = async (req, res) => {
+    try {
+        const { name, bio } = req.body;
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        user.name = name || user.name;
+        user.bio = bio !== undefined ? bio : user.bio;
+        await user.save();
         res.json({ user: clean(user) });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update password
+// @route   PUT /api/auth/password
+export const updatePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        if (!(await user.matchPassword(currentPassword))) {
+            return res.status(400).json({ message: "Current password is incorrect" });
+        }
+        user.password = newPassword;
+        await user.save();
+        res.json({ message: "Password updated successfully" });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

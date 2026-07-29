@@ -8,7 +8,7 @@ export default function AnalyticsPage() {
     useEffect(() => {
         api.get("/polls/stats")
             .then((res) => setStats(res))
-            .catch(() => {});
+            .catch((err) => console.error("Analytics fetch failed:", err));
     }, []);
 
     const cards = [

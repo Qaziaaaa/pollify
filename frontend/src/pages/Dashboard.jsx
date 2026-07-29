@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { BarChart3 } from "lucide-react";
+import { LayoutDashboard, PlusSquare, User } from "lucide-react";
 import api from "../utils/api.js";
 import PollCard from "../components/PollCard.jsx";
 
@@ -11,7 +11,8 @@ export default function Dashboard() {
     useEffect(() => {
         api.get("/polls")
             .then((res) => setPolls(res.polls || []))
-            .catch(() => {})
+            // FIX: log error instead of silently swallowing it
+            .catch((err) => console.error("Dashboard fetch failed:", err))
             .finally(() => setLoading(false));
     }, []);
 
@@ -44,12 +45,12 @@ export default function Dashboard() {
 
             <div className="fixed bottom-0 left-0 right-0 md:hidden bg-zinc-900 border-t border-zinc-800 flex justify-around py-3 px-4">
                 {[
-                    { to: "/dashboard", label: "Home" },
-                    { to: "/create-poll", label: "Create" },
-                    { to: "/profile", label: "Profile" },
-                ].map(({ to, label }) => (
+                    { to: "/dashboard", label: "Home", Icon: LayoutDashboard },
+                    { to: "/create-poll", label: "Create", Icon: PlusSquare },
+                    { to: "/profile", label: "Profile", Icon: User },
+                ].map(({ to, label, Icon }) => (
                     <Link key={to} to={to} className="flex flex-col items-center text-zinc-500 text-[10px]">
-                        <BarChart3 size={18} />
+                        <Icon size={18} />
                         {label}
                     </Link>
                 ))}

@@ -62,6 +62,8 @@ userSchema.pre("save", async function (next) {
 });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
+    // FIX: guard against missing/corrupt password hash in DB
+    if (!this.password) return false;
     return bcrypt.compare(enteredPassword, this.password);
 };
 

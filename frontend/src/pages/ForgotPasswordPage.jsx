@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertCircle, Mail, ArrowLeft } from "lucide-react";
+import { AlertCircle, Mail, ArrowLeft, Lock, KeyRound } from "lucide-react";
 import api from "../utils/api.js";
 
 export default function ForgotPasswordPage() {
-    const [step, setStep] = useState(1); // 1 = email, 2 = otp, 3 = new password
+    const [step, setStep] = useState(1); // 1 = email, 2 = otp + new password
     const [email, setEmail] = useState("");
     const [otp, setOtp] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -21,20 +21,6 @@ export default function ForgotPasswordPage() {
             setStep(2);
         } catch (err) {
             setError(err.message || "Failed to send OTP");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const verifyOtp = async (e) => {
-        e.preventDefault();
-        setError("");
-        setLoading(true);
-        try {
-            await api.post("/auth/verify", { email, otp });
-            setStep(3);
-        } catch (err) {
-            setError(err.message || "Invalid OTP");
         } finally {
             setLoading(false);
         }
@@ -61,7 +47,7 @@ export default function ForgotPasswordPage() {
 
                 {/* Steps indicator */}
                 <div className="flex items-center justify-center gap-2 mb-8">
-                    {[1, 2, 3].map((s) => (
+                    {[1, 2].map((s) => (
                         <div key={s} className={`w-2.5 h-2.5 rounded-full ${step >= s ? "bg-emerald-500" : "bg-zinc-700"}`} />
                     ))}
                 </div>
@@ -101,50 +87,37 @@ export default function ForgotPasswordPage() {
                     </>
                 )}
 
-                {/* Step 2: Enter OTP */}
+                {/* Step 2: Enter OTP + New Password */}
                 {step === 2 && (
                     <>
-                        <h2 className="text-2xl font-bold text-white text-center">Enter reset code</h2>
-                        <p className="text-zinc-400 text-sm text-center mt-2">We sent a 6-digit code to {email}</p>
-                        <form onSubmit={verifyOtp} className="mt-6 space-y-4">
+                        <h2 className="text-2xl font-bold text-white text-center">Reset password</h2>
+                        <p className="text-zinc-400 text-sm text-center mt-2">Enter the code sent to {email} and your new password</p>
+                        <form onSubmit={resetPassword} className="mt-6 space-y-4">
                             <input
                                 type="text"
-                                placeholder="000000"
+                                placeholder="Reset code"
                                 maxLength={6}
-                                className="w-full rounded-xl border border-zinc-700/80 bg-zinc-800/50 px-4 py-3 text-center text-2xl tracking-[8px] text-white placeholder:text-zinc-600 outline-none focus:border-emerald-500/60"
+                                className="w-full rounded-xl border border-zinc-700/80 bg-zinc-800/50 pl-10 pr-4 py-3 text-center text-xl tracking-[6px] text-white placeholder:text-zinc-600 outline-none focus:border-emerald-500/60 text-sm"
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                                 required
                             />
+                            <KeyRound size={15} className="absolute left-3.5 top-[78px] text-zinc-500" />
+                            <div className="relative">
+                                <input
+                                    type="password"
+                                    placeholder="New password"
+                                    className="w-full rounded-xl border border-zinc-700/80 bg-zinc-800/50 pl-10 pr-4 py-3 text-white placeholder:text-zinc-600 outline-none focus:border-emerald-500/60 text-sm"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    minLength={8}
+                                    required
+                                />
+                                <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+                            </div>
                             <button
                                 type="submit"
-                                disabled={loading || otp.length !== 6}
-                                className="w-full rounded-xl px-4 py-3 text-sm font-bold bg-emerald-500 text-white hover:bg-emerald-400 disabled:opacity-50 transition-all shadow-lg shadow-emerald-500/25"
-                            >
-                                {loading ? "Verifying…" : "Verify Code"}
-                            </button>
-                        </form>
-                    </>
-                )}
-
-                {/* Step 3: New password */}
-                {step === 3 && (
-                    <>
-                        <h2 className="text-2xl font-bold text-white text-center">New password</h2>
-                        <p className="text-zinc-400 text-sm text-center mt-2">Enter your new password</p>
-                        <form onSubmit={resetPassword} className="mt-6 space-y-4">
-                            <input
-                                type="password"
-                                placeholder="••••••••"
-                                className="w-full rounded-xl border border-zinc-700/80 bg-zinc-800/50 px-4 py-3 text-white placeholder:text-zinc-600 outline-none focus:border-emerald-500/60 text-sm"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                minLength={8}
-                                required
-                            />
-                            <button
-                                type="submit"
-                                disabled={loading || newPassword.length < 8}
+                                disabled={loading || otp.length !== 6 || newPassword.length < 8}
                                 className="w-full rounded-xl px-4 py-3 text-sm font-bold bg-emerald-500 text-white hover:bg-emerald-400 disabled:opacity-50 transition-all shadow-lg shadow-emerald-500/25"
                             >
                                 {loading ? "Resetting…" : "Reset Password"}
