@@ -111,7 +111,7 @@ export const userProfileStyles = {
   userName: "text-lg font-bold text-white",
   userUsername: "text-sm text-zinc-500",
   userBio: "text-sm text-zinc-400 mt-2 leading-relaxed",
-  statsRow: "flex gap-6",
+  statsRow: "flex gap-4 flex-wrap",
   statNumber: "text-base font-bold text-white",
   statLabel: "text-xs text-zinc-500",
   pollsHeading: "text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-4",
@@ -371,14 +371,19 @@ export const sidebarStyles = {
 
 export const notificationStyles = {
   bellButton: "relative p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors",
-  unreadDot: "absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-zinc-900",
-  dropdown: "absolute right-0 top-full mt-2 w-72 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden z-50",
-  dropdownHeader: "text-[10px] font-semibold text-zinc-500 uppercase tracking-wider px-3 py-2 border-b border-zinc-800",
-  notifItem: "flex items-start gap-2.5 px-3 py-2.5 hover:bg-zinc-800/50 transition-colors border-b border-zinc-800/50 last:border-0",
+  unreadDot: "absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-rose-500 ring-2 ring-zinc-900 text-[10px] font-bold text-white px-1",
+  dropdown: "absolute right-0 top-full mt-2 w-80 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto",
+  dropdownHeader: "flex items-center justify-between text-[10px] font-semibold text-zinc-500 uppercase tracking-wider px-3 py-2 border-b border-zinc-800 sticky top-0 bg-zinc-900",
+  markAllRead: "text-[10px] font-semibold text-emerald-400 hover:text-emerald-300 normal-case tracking-normal",
+  notifItem: "flex items-start gap-2.5 px-3 py-2.5 hover:bg-zinc-800/50 transition-colors border-b border-zinc-800/50 last:border-0 cursor-pointer",
+  notifUnread: "bg-emerald-500/5",
   notifIconContainer: "w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 mt-0.5",
+  notifIconUnread: "bg-emerald-500/15 text-emerald-400",
   notifContent: "flex-1 min-w-0",
   notifText: "text-xs text-zinc-400 leading-relaxed",
-  notifTime: "text-[10px] text-zinc-700 mt-0.5",
+  notifPollText: "text-zinc-600 italic",
+  notifTime: "text-[10px] text-zinc-700 mt-0.5 flex items-center gap-1.5",
+  unreadIndicator: "w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block",
   emptyText: "text-xs text-zinc-600 text-center py-6",
 };
 

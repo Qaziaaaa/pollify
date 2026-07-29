@@ -28,7 +28,7 @@ export default function OtpStep({
     try {
       await onSubmit(otp);
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid or expired OTP");
+      setError(err.message || "Invalid or expired OTP");
     } finally {
       setBusy(false);
     }

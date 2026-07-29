@@ -17,6 +17,14 @@ const COLORS = [
 
 function ProfileCard() {
   const { user } = useAuth();
+  const [stats, setStats] = useState({ created: 0, voted: 0, followers: 0, following: 0 });
+
+  useEffect(() => {
+    if (!user) return;
+    api.get("/auth/profile")
+      .then((res) => setStats(res.stats || { created: (res.user?.polls || []).length, voted: 0, followers: 0, following: 0 }))
+      .catch(() => {});
+  }, [user]);
 
   return (
     <div className={s.profileCard}>
@@ -31,16 +39,16 @@ function ProfileCard() {
 
         <div className={s.statsContainer}>
           <div className={s.statBox}>
-            <div className={s.statNumber}>{user?.pollCount || 0}</div>
+            <div className={s.statNumber}>{stats.created || 0}</div>
             <div className={s.statLabel}>Polls</div>
           </div>
           <div className={s.statBox}>
-            <div className={s.statNumber}>{user?.followers || 0}</div>
-            <div className={s.statLabel}>Followers</div>
+            <div className={s.statNumber}>{stats.voted || 0}</div>
+            <div className={s.statLabel}>Voted</div>
           </div>
           <div className={s.statBox}>
-            <div className={s.statNumber}>{user?.following || 0}</div>
-            <div className={s.statLabel}>Following</div>
+            <div className={s.statNumber}>{stats.followers || 0}</div>
+            <div className={s.statLabel}>Followers</div>
           </div>
         </div>
 

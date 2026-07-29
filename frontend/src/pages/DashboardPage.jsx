@@ -39,22 +39,8 @@ export default function DashboardPage() {
   const handleVote = async (pollId, value) => {
     try {
       await api.post(`/polls/${pollId}/vote`, { value });
-      setPolls((prev) =>
-        prev.map((p) => {
-          if (p._id !== pollId) return p;
-          const already = p.myVote;
-          return {
-            ...p,
-            myVote: value,
-            totalVotes: (p.totalVotes || 0) + (already ? 0 : 1),
-            results: p.results
-              ? p.results.map((r) =>
-                  r.value === value ? { ...r, count: r.count + 1 } : r.value === already ? { ...r, count: r.count - 1 } : r
-                )
-              : undefined,
-          };
-        })
-      );
+      const res = await api.get(`/polls/${pollId}`);
+      setPolls((prev) => prev.map((p) => (p._id === pollId ? res.poll : p)));
     } catch {}
   };
 

@@ -16,14 +16,25 @@ export default function VotedPollsPage() {
     if (authLoading) return;
     if (!user) { navigate("/login", { replace: true }); return; }
 
-    api.get("/polls")
-      .then((res) => setPolls((res.polls || []).filter((p) => p.myVote !== null && p.myVote !== undefined)))
+    api.get("/polls/voted")
+      .then((res) => setPolls(res.polls || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user, authLoading, navigate]);
 
   const handleVote = async (pollId, value) => {
-    try { await api.post(`/polls/${pollId}/vote`, { value }); } catch {}
+    try {
+      await api.post(`/polls/${pollId}/vote`, { value });
+      const res = await api.get(`/polls/${pollId}`);
+      setPolls((prev) => prev.map((p) => (p._id === pollId ? { ...res.poll, myVote: value } : p)));
+    } catch {}
+  };
+
+  const handleUnvote = async (pollId) => {
+    try {
+      const res = await api.post(`/polls/${pollId}/unvote`);
+      setPolls((prev) => prev.map((p) => (p._id === pollId ? res.poll : p)));
+    } catch {}
   };
 
   const toggleBookmark = async (pollId) => {
@@ -42,7 +53,7 @@ export default function VotedPollsPage() {
           {polls.length > 0 ? (
             <div className="space-y-3">
               {polls.map((poll) => (
-                <PollCard key={poll._id} poll={poll} vote={handleVote} bookmark={toggleBookmark} />
+                <PollCard key={poll._id} poll={poll} vote={handleVote} unvote={handleUnvote} bookmark={toggleBookmark} />
               ))}
             </div>
           ) : (

@@ -101,13 +101,13 @@ export default function PollCard({
 
       <div className="p-4">
         <div className={s.header}>
-          <Link to={`/user/${u.username}`}>
+          <Link to={`/profile/${u._id}`}>
             <Avatar user={u} className={s.avatar} />
           </Link>
           <div className={s.userInfo}>
             <div className={s.userInfoInner}>
               <Link
-                to={`/user/${u.username}`}
+                to={`/profile/${u._id}`}
                 className={s.userNameLink}
               >
                 {u.name}

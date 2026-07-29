@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import Poll from "../models/Poll.js";
+import { enrichPoll, bookmarkSet } from "../utils/computeResults.js";
 
 const clean = (user) => ({
     _id: user._id,
@@ -19,16 +20,40 @@ export const getUser = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        const polls = await Poll.find({ creator: req.params.id })
-            .populate("creator", "name username avatar")
-            .sort({ createdAt: -1 });
+        const [polls, voted, followers, me] = await Promise.all([
+            Poll.find({ creator: user._id })
+                .populate("creator", "name username avatar")
+                .sort("-createdAt"),
+            Poll.countDocuments({ "votes.user": user._id }),
+            User.countDocuments({ following: user._id }),
+            req.userId ? User.findById(req.userId).select("bookmarks following") : Promise.resolve(null),
+        ]);
+
+        const bmSet = await bookmarkSet(req.userId);
+        const isFollowing = me ? (me.following || []).some((id) => String(id) === String(user._id)) : false;
+        const shaped = polls.map((poll) => {
+            const p = enrichPoll(poll, req.userId);
+            p.isBookmarked = bmSet.has(String(poll._id));
+            return p;
+        });
 
         res.json({
             user: {
-                ...clean(user),
-                pollCount: polls.length,
-                polls,
+                _id: user._id,
+                name: user.name,
+                username: user.username,
+                avatar: user.avatar,
+                bio: user.bio,
             },
+            isFollowing,
+            isMe: req.userId ? String(user._id) === String(req.userId) : false,
+            stats: {
+                created: polls.length,
+                voted,
+                followers,
+                following: user.following?.length || 0,
+            },
+            polls: shaped,
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

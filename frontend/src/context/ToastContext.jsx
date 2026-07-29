@@ -14,10 +14,13 @@ export function ToastProvider({ children }) {
     }, 3000);
   }, []);
 
-  const toast = {
-    success: (msg) => addToast(msg, "success"),
-    error: (msg) => addToast(msg, "error"),
-  };
+  const toast = Object.assign(
+    (msg, type = "success") => addToast(msg, type),
+    {
+      success: (msg) => addToast(msg, "success"),
+      error: (msg) => addToast(msg, "error"),
+    }
+  );
 
   return (
     <ToastContext.Provider value={toast}>

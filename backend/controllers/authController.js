@@ -1,9 +1,11 @@
 import User from "../models/User.js";
 import Poll from "../models/Poll.js";
+import Comment from "../models/Comment.js";
 import jwt from "jsonwebtoken";
 import { generateOTP, expireOTP, otpValid } from "../utils/generateOTP.js";
 import sendMail from "../utils/mailer.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
+import { computeResults, enrichPoll } from "../utils/computeResults.js";
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
@@ -132,7 +134,32 @@ export const getProfile = async (req, res) => {
             .populate("creator", "name username avatar")
             .sort({ createdAt: -1 });
 
-        res.json({ user: { ...clean(user), created: polls } });
+        const commentCounts = await Promise.all(
+            polls.map((p) => Comment.countDocuments({ poll: p._id }))
+        );
+
+        const enriched = polls.map((poll, idx) => {
+            const p = enrichPoll(poll, null);
+            p.comments = commentCounts[idx] || 0;
+            return p;
+        });
+
+        // Count followers (users who have this user in their following array)
+        const followers = await User.countDocuments({ following: req.userId });
+
+        res.json({
+            user: {
+                ...clean(user),
+                pollCount: polls.length,
+                polls: enriched,
+            },
+            stats: {
+                created: polls.length,
+                voted: await Poll.countDocuments({ "votes.user": req.userId }),
+                followers,
+                following: user.following?.length || 0,
+            },
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -142,13 +169,28 @@ export const getProfile = async (req, res) => {
 // @route   PUT /api/auth/profile
 export const updateProfile = async (req, res) => {
     try {
-        const { name, bio } = req.body;
+        const { name, username, bio } = req.body;
         const user = await User.findById(req.userId);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
-        user.name = name || user.name;
-        user.bio = bio !== undefined ? bio : user.bio;
+
+        if (username && username !== user.username) {
+            const taken = await User.findOne({ username });
+            if (taken) {
+                return res.status(400).json({ message: "Username already taken" });
+            }
+            user.username = username;
+        }
+        if (name) user.name = name;
+        if (bio !== undefined) user.bio = bio;
+        if (req.file) {
+            try {
+                user.avatar = await uploadToCloudinary(req.file.buffer);
+            } catch (e) {
+                console.warn("Avatar upload skipped:", e.message);
+            }
+        }
         await user.save();
         res.json({ user: clean(user) });
     } catch (error) {

@@ -23,11 +23,43 @@ export default function MyPollsPage() {
   }, [user, authLoading, navigate]);
 
   const handleVote = async (pollId, value) => {
-    try { await api.post(`/polls/${pollId}/vote`, { value }); } catch {}
+    try {
+      await api.post(`/polls/${pollId}/vote`, { value });
+      const res = await api.get(`/polls/${pollId}`);
+      setPolls((prev) => prev.map((p) => (p._id === pollId ? res.poll : p)));
+    } catch {}
+  };
+
+  const handleUnvote = async (pollId) => {
+    try {
+      const res = await api.post(`/polls/${pollId}/unvote`);
+      setPolls((prev) => prev.map((p) => (p._id === pollId ? (res.poll || p) : p)));
+    } catch {}
   };
 
   const toggleBookmark = async (pollId) => {
     try { await api.post(`/polls/${pollId}/bookmark`); } catch {}
+  };
+
+  const handleEdit = async (pollId, data) => {
+    try {
+      await api.put(`/polls/${pollId}`, data);
+      setPolls((prev) => prev.map((p) => (p._id === pollId ? { ...p, ...data } : p)));
+    } catch {}
+  };
+
+  const handleClose = async (pollId) => {
+    try {
+      const res = await api.patch(`/polls/${pollId}/close`);
+      setPolls((prev) => prev.map((p) => (p._id === pollId ? { ...p, closed: res.poll.closed } : p)));
+    } catch {}
+  };
+
+  const handleDelete = async (pollId) => {
+    try {
+      await api.delete(`/polls/${pollId}`);
+      setPolls((prev) => prev.filter((p) => p._id !== pollId));
+    } catch {}
   };
 
   if (authLoading || !user) return null;
@@ -46,8 +78,12 @@ export default function MyPollsPage() {
                   key={poll._id}
                   poll={poll}
                   vote={handleVote}
+                  unvote={handleUnvote}
                   bookmark={toggleBookmark}
                   owner={true}
+                  edit={handleEdit}
+                  close={handleClose}
+                  remove={handleDelete}
                 />
               ))}
             </div>

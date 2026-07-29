@@ -21,7 +21,18 @@ export default function SinglePollPage() {
   }, [id]);
 
   const handleVote = async (pollId, value) => {
-    try { await api.post(`/polls/${pollId}/vote`, { value }); } catch {}
+    try {
+      await api.post(`/polls/${pollId}/vote`, { value });
+      const res = await api.get(`/polls/${pollId}`);
+      setPoll(res.poll || res);
+    } catch {}
+  };
+
+  const handleUnvote = async (pollId) => {
+    try {
+      const res = await api.post(`/polls/${pollId}/unvote`);
+      setPoll(res.poll || res);
+    } catch {}
   };
 
   const toggleBookmark = async (pollId) => {
@@ -38,7 +49,7 @@ export default function SinglePollPage() {
       {error ? (
         <div className="text-center py-16 text-zinc-600 text-sm">{error}</div>
       ) : poll ? (
-        <PollCard poll={poll} vote={handleVote} bookmark={toggleBookmark} />
+        <PollCard poll={poll} vote={handleVote} unvote={handleUnvote} bookmark={toggleBookmark} />
       ) : null}
     </Layout>
   );

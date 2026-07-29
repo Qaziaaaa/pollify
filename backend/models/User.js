@@ -35,6 +35,12 @@ const userSchema = mongoose.Schema(
             default: "",
             maxlength: 160,
         },
+        following: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+            },
+        ],
         bookmarks: [
             {
                 type: mongoose.Schema.Types.ObjectId,

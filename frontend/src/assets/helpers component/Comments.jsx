@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Send, Trash2, CornerDownRight } from "lucide-react";
 import api from "../../utils/api.js";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { useToast } from "./Toast.jsx";
+import { useToast } from "../../context/ToastContext.jsx";
 import { Avatar } from "./UIElements.jsx";
 import { commentsStyles as s } from "../dummyStyles";
 
@@ -34,14 +34,14 @@ function CommentItem({ c, replies, meId, onReply, onDelete }) {
 
   return (
     <div className={s.commentItem}>
-      <Link to={`/user/${c.user?.username}`}>
+      <Link to={`/profile/${c.user?._id}`}>
         <Avatar user={c.user} className={s.avatarSmall} />
       </Link>
       <div className={s.commentContent}>
         <div className={s.commentBubble}>
           <div className={s.commentHeader}>
             <Link
-              to={`/user/${c.user?.username}`}
+              to={`/profile/${c.user?._id}`}
               className={s.usernameLink}
             >
               @{c.user?.username}
@@ -94,7 +94,7 @@ function CommentItem({ c, replies, meId, onReply, onDelete }) {
                   size={12}
                   className={s.replyIndent}
                 />
-                <Link to={`/user/${r.user?.username}`}>
+                <Link to={`/profile/${r.user?._id}`}>
                   <Avatar
                     user={r.user}
                     className={s.avatarTiny}
@@ -103,7 +103,7 @@ function CommentItem({ c, replies, meId, onReply, onDelete }) {
                 <div className={s.replyBubble}>
                   <div className={s.replyHeader}>
                     <Link
-                      to={`/user/${r.user?.username}`}
+                      to={`/profile/${r.user?._id}`}
                       className={s.replyUsername}
                     >
                       @{r.user?.username}
@@ -141,7 +141,7 @@ export default function Comments({ pollId }) {
   useEffect(() => {
     api
       .get(`/polls/${pollId}/comments`)
-      .then(({ data }) => setList(data || []))
+      .then((res) => setList(res.comments || []))
       .catch(() => {});
   }, [pollId]);
 
@@ -150,8 +150,8 @@ export default function Comments({ pollId }) {
     if (!text.trim() || busy) return;
     setBusy(true);
     try {
-      const { data } = await api.post(`/polls/${pollId}/comments`, { text });
-      setList((l) => [data, ...l]);
+      const res = await api.post(`/polls/${pollId}/comments`, { text });
+      setList((l) => [res.comment, ...l]);
       setText("");
     } finally {
       setBusy(false);
@@ -159,11 +159,11 @@ export default function Comments({ pollId }) {
   };
 
   const reply = async (parent, body) => {
-    const { data } = await api.post(`/polls/${pollId}/comments`, {
+    const res = await api.post(`/polls/${pollId}/comments`, {
       text: body,
       parentComment: parent,
     });
-    setList((l) => [...l, data]);
+    setList((l) => [...l, res.comment]);
   };
 
   const remove = async (id) => {

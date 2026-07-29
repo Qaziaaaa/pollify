@@ -53,7 +53,7 @@ export default function Connections({ username, initialTab = "followers" }) {
           {list.map((u) => (
             <Link
               key={u._id}
-              to={`/user/${u.username}`}
+              to={`/profile/${u._id}`}
               className={s.userLink}
             >
               <Avatar user={u} className={s.userAvatar} />

@@ -23,7 +23,18 @@ export default function BookmarkedPollsPage() {
   }, [user, authLoading, navigate]);
 
   const handleVote = async (pollId, value) => {
-    try { await api.post(`/polls/${pollId}/vote`, { value }); } catch {}
+    try {
+      await api.post(`/polls/${pollId}/vote`, { value });
+      const res = await api.get(`/polls/${pollId}`);
+      setPolls((prev) => prev.map((p) => (p._id === pollId ? { ...res.poll, isBookmarked: true } : p)));
+    } catch {}
+  };
+
+  const handleUnvote = async (pollId) => {
+    try {
+      const res = await api.post(`/polls/${pollId}/unvote`);
+      setPolls((prev) => prev.map((p) => (p._id === pollId ? { ...res.poll, isBookmarked: true } : p)));
+    } catch {}
   };
 
   const toggleBookmark = async (pollId) => {
@@ -49,6 +60,7 @@ export default function BookmarkedPollsPage() {
                   key={poll._id}
                   poll={{ ...poll, isBookmarked: true }}
                   vote={handleVote}
+                  unvote={handleUnvote}
                   bookmark={toggleBookmark}
                 />
               ))}

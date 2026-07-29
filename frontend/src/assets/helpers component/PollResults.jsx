@@ -227,12 +227,12 @@ export default function PollResults({ poll, onUnvote }) {
         <div className={s.ratingSummary}>
           <span className={s.ratingAverage}>{avg.toFixed(1)}</span>
           <div className={s.ratingStars}>
-            {[1, 2, 3, 4, 5].map((s) => (
+            {[1, 2, 3, 4, 5].map((star) => (
               <Star
-                key={s}
+                key={star}
                 size={13}
                 className={
-                  s <= Math.round(avg) ? s.starFilled : s.starEmpty
+                  star <= Math.round(avg) ? s.starFilled : s.starEmpty
                 }
               />
             ))}
