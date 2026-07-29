@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Image, AlertCircle, X } from "lucide-react";
 import api from "../utils/api.js";
 import { TYPE_META } from "../components/FilterBar.jsx";
 import { inputCls } from "../components/UIElements.jsx";
@@ -13,9 +13,11 @@ export default function CreatePollPage() {
   const [question, setQuestion] = useState("");
   const [type, setType] = useState("yesno");
   const [options, setOptions] = useState(["", ""]);
+  const [images, setImages] = useState([]);
   const [category, setCategory] = useState("General");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
   const addOption = () => setOptions([...options, ""]);
@@ -26,20 +28,41 @@ export default function CreatePollPage() {
     setOptions(next);
   };
 
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    setImages((prev) => [...prev, ...files.map((f) => ({ file: f, preview: URL.createObjectURL(f) }))]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeImage = (i) => {
+    setImages((prev) => {
+      URL.revokeObjectURL(prev[i].preview);
+      return prev.filter((_, idx) => idx !== i);
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const payload = { question, type, category };
-      if (type === "yesno") {
-        payload.options = ["Yes", "No"];
-      } else if (type === "single") {
-        payload.options = options.filter(Boolean);
-      } else if (type === "image") {
-        payload.options = options.filter(Boolean);
+      if (type === "image") {
+        if (images.length < 2) throw new Error("Add at least 2 images");
+        const fd = new FormData();
+        fd.append("question", question);
+        fd.append("type", "image");
+        fd.append("category", category);
+        images.forEach((img) => fd.append("images", img.file));
+        await api.post("/polls", fd);
+      } else {
+        const payload = { question, type, category };
+        if (type === "yesno") {
+          payload.options = ["Yes", "No"];
+        } else if (type === "single") {
+          payload.options = options.filter(Boolean);
+        }
+        await api.post("/polls", payload);
       }
-      await api.post("/polls", payload);
       navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Failed to create poll");
@@ -78,7 +101,10 @@ export default function CreatePollPage() {
               <button
                 key={key}
                 type="button"
-                onClick={() => setType(key)}
+                onClick={() => {
+                  setType(key);
+                  if (key !== "image") setImages([]);
+                }}
                 className={`${s.typeButtonBase} ${
                   type === key ? s.typeButtonActive : s.typeButtonInactive
                 }`}
@@ -103,7 +129,7 @@ export default function CreatePollPage() {
           </select>
         </div>
 
-        {needsOptions && (
+        {type === "single" && (
           <div className={s.optionsContainer}>
             <label className={s.label}>Options</label>
             {options.map((opt, i) => (
@@ -124,6 +150,48 @@ export default function CreatePollPage() {
             <button type="button" onClick={addOption} className={`${inputCls} ${s.addOptionButton} text-emerald-400 border-dashed`}>
               <Plus size={14} /> Add option
             </button>
+          </div>
+        )}
+
+        {type === "image" && (
+          <div>
+            <label className={s.label}>Upload Images</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {images.map((img, i) => (
+                <div key={i} className="relative group aspect-square rounded-xl overflow-hidden bg-zinc-800/70 border border-zinc-700/60">
+                  <img src={img.preview} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500/80"
+                  >
+                    <X size={14} />
+                  </button>
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent h-8" />
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="aspect-square rounded-xl border-2 border-dashed border-zinc-700/60 hover:border-emerald-500/40 bg-zinc-800/30 hover:bg-zinc-800/60 transition-all flex flex-col items-center justify-center gap-1.5 text-zinc-500 hover:text-emerald-400 group"
+              >
+                <Image size={22} className="group-hover:scale-110 transition-transform" />
+                <span className="text-[11px] font-semibold">{images.length === 0 ? "Add Images" : "Add More"}</span>
+              </button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            {images.length < 2 && (
+              <p className="text-[11px] text-rose-400/80 mt-2 flex items-center gap-1">
+                <AlertCircle size={11} /> Add at least 2 images
+              </p>
+            )}
           </div>
         )}
 

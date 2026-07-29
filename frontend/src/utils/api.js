@@ -2,11 +2,13 @@ const BASE_URL = "http://localhost:5000/api";
 
 async function request(method, path, data = null) {
   const token = localStorage.getItem("token");
-  const headers = { "Content-Type": "application/json" };
+  const isFormData = data instanceof FormData;
+  const headers = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (!isFormData) headers["Content-Type"] = "application/json";
 
   const config = { method, headers };
-  if (data && method !== "GET") config.body = JSON.stringify(data);
+  if (data && method !== "GET") config.body = isFormData ? data : JSON.stringify(data);
 
   const res = await fetch(`${BASE_URL}${path}`, config);
   const json = await res.json();
