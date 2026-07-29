@@ -97,6 +97,17 @@ export const settingsStyles = {
   sectionTitle: "text-sm font-semibold text-zinc-100 mb-4",
   label: "text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1.5 block",
   passwordForm: "space-y-3",
+  avatarWrap: "flex items-center gap-4 mb-5",
+  avatarImg: "w-16 h-16 rounded-full object-cover bg-zinc-800",
+  avatarOverlay: "absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer",
+  avatarUploadBtn: "text-[10px] font-semibold text-white",
+  usernameRow: "flex items-center gap-2",
+  usernameInput: "flex-1",
+  usernameCheck: "text-[10px] font-semibold px-2.5 py-1 rounded-lg",
+  usernameAvailable: "text-emerald-400 bg-emerald-500/10",
+  usernameTaken: "text-rose-400 bg-rose-500/10",
+  usernameLoading: "text-zinc-500 bg-zinc-800",
+  inputHint: "text-[10px] text-zinc-600 mt-1",
 };
 
 export const userProfileStyles = {

@@ -59,3 +59,18 @@ export const getUser = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Check if username is available
+// @route   GET /api/users/check-username
+export const checkUsername = async (req, res) => {
+    try {
+        const { username } = req.query;
+        if (!username || username.length < 3) {
+            return res.json({ available: false });
+        }
+        const existing = await User.findOne({ username });
+        res.json({ available: !existing });
+    } catch {
+        res.json({ available: false });
+    }
+};
