@@ -57,7 +57,7 @@ export function computeResults(poll) {
  */
 export function enrichPoll(poll, userId) {
     const p = poll.toObject ? poll.toObject() : { ...poll };
-    const myVoteEntry = userId ? poll.votes.find((v) => String(v.user) === String(userId)) : null;
+    const myVoteEntry = userId ? poll.votes.find((v) => String(v.user?._id || v.user) === String(userId)) : null;
     p.myVote = myVoteEntry ? myVoteEntry.value : null;
     p.totalVotes = poll.votes.length;
     p.results = computeResults(poll);

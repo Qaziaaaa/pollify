@@ -156,7 +156,7 @@ export const layoutStyles = {
   sidebarBottom: "pt-4 border-t border-zinc-800/60 space-y-0.5",
   logoutButton: "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-500 hover:bg-rose-500/8 transition-colors duration-150",
   mainContent: "flex-1 min-w-0 max-w-2xl mx-auto py-5 pb-24 lg:pb-6 max-lg:px-3",
-  rightRail: "hidden xl:flex flex-col w-72 shrink-0 py-5 gap-3 sticky top-14 self-start max-h-[calc(100vh-3.5rem)] overflow-y-auto",
+  rightRail: "hidden xl:flex flex-col w-72 shrink-0 pt-5 pb-5 gap-3 sticky top-14 self-start",
   bottomNav: "lg:hidden fixed bottom-0 inset-x-0 z-40 bg-zinc-950/95 backdrop-blur-xl border-t border-zinc-800/60 flex justify-around px-2 pt-1.5 pb-2 max-lg:rounded-t-2xl max-lg:shadow-[0_-4px_20px_rgba(0,0,0,0.4)]",
   bottomLinkBase: "flex flex-col items-center gap-0.5 py-1.5 px-3 text-[10px] font-semibold transition-colors duration-150",
   bottomLinkActive: "text-emerald-400",
@@ -372,7 +372,7 @@ export const sidebarStyles = {
   statBox: "text-center",
   statNumber: "text-base font-bold text-white tabular-nums",
   statLabel: "text-[10px] text-zinc-600 mt-0.5 uppercase tracking-wide",
-  viewProfileLink: "relative mt-4 flex items-center justify-center rounded-xl bg-emerald-500 text-white hover:bg-emerald-400 text-xs font-semibold py-2.5 transition-all duration-150 active:scale-[0.97] shadow-lg shadow-emerald-500/25",
+  viewProfileLink: "relative mt-4 flex items-center justify-center rounded-xl bg-emerald-500 text-white hover:bg-emerald-400 text-xs font-semibold py-1.5 w-full transition-all duration-150 active:scale-[0.97] shadow-lg shadow-emerald-500/25",
   trendingCard: "bg-zinc-900/80 border border-zinc-800/80 rounded-2xl p-4",
   trendingHeading: "text-[10px] font-bold text-zinc-700 uppercase tracking-widest mb-4 flex items-center gap-2",
   trendingIcon: "text-emerald-500",
@@ -405,9 +405,9 @@ export const notificationStyles = {
 
 export const toastStyles = {
   container: "fixed top-4 right-4 z-50 flex flex-col gap-2",
-  toastBase: "flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-white text-sm transition-all",
-  toastSuccess: "bg-green-500",
-  toastError: "bg-red-500",
+  toastBase: "flex items-center gap-2 px-4 py-3 rounded-xl shadow-2xl border text-sm transition-all",
+  toastSuccess: "bg-zinc-900 border-emerald-500/30 text-emerald-400",
+  toastError: "bg-zinc-900 border-rose-500/30 text-rose-400",
 };
 
 export const uiElementStyles = {

@@ -180,7 +180,7 @@ export default function SettingsPage() {
             <div>
               <label className={s.label}>New Password</label>
               <input type="password" className={inputCls} placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-              <p className={s.inputHint}>At least 6 characters</p>
+              <p className={s.inputHint}>At least 8 characters</p>
             </div>
             <button type="submit" disabled={pwSaving} className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 text-white px-6 py-2.5 text-sm font-semibold hover:bg-emerald-400 transition-all disabled:opacity-40">
               {pwSaving && <Loader2 size={14} className="animate-spin" />}

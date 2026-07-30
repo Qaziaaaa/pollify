@@ -7,10 +7,11 @@ import { Link } from "react-router-dom";
 import {
   ArrowBigUp, Bookmark, MessageCircle, Lock,
   Pencil, RotateCcw, Trash2, Share2, Check, Copy,
+  ChevronDown,
 } from "lucide-react";
 import PollVote from "./PollVote.jsx";
 import Comments from "./Comments.jsx";
-import { Avatar, Button, inputCls } from "./UIElements.jsx";
+import { Avatar, Button, inputCls, ConfirmModal } from "./UIElements.jsx";
 import { pollCardStyles as s } from "../dummyStyles";
 
 // Available categories for the edit dropdown
@@ -43,17 +44,40 @@ export default function PollCard({
   const voted = poll.myVote !== null && poll.myVote !== undefined;
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showCatDropdown, setShowCatDropdown] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const shareRef = useRef(null);
+  const catRef = useRef(null);
 
-  // Close share popover when clicking outside
+  // Close share popover when clicking outside or pressing Escape
   useEffect(() => {
     if (!showShare) return;
-    const handler = (e) => { if (shareRef.current && !shareRef.current.contains(e.target)) setShowShare(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const close = () => setShowShare(false);
+    const onDown = (e) => { if (shareRef.current && !shareRef.current.contains(e.target)) close(); };
+    const onKey = (e) => { if (e.key === "Escape") close(); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [showShare]);
+
+  // Close category dropdown when clicking outside or pressing Escape
+  useEffect(() => {
+    if (!showCatDropdown) return;
+    const close = () => setShowCatDropdown(false);
+    const onDown = (e) => { if (catRef.current && !catRef.current.contains(e.target)) close(); };
+    const onKey = (e) => { if (e.key === "Escape") close(); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [showCatDropdown]);
 
   // Edit form state
   const [eq, setEq] = useState("");
@@ -139,7 +163,7 @@ export default function PollCard({
               </button>
             )}
             {remove && (
-              <button onClick={() => { if (window.confirm("Delete this poll?")) remove(poll._id); }} title="Delete" className={s.ownerDelete}>
+              <button onClick={() => setShowDeleteConfirm(true)} title="Delete" className={s.ownerDelete}>
                 <Trash2 size={13} />
               </button>
             )}
@@ -150,12 +174,25 @@ export default function PollCard({
         {editing ? (
           <div className="mb-3 space-y-2">
             <textarea value={eq} onChange={(e) => setEq(e.target.value)} className={`${inputCls} ${s.editTextarea}`} />
-            <select value={ecat} onChange={(e) => setEcat(e.target.value)} className={inputCls}>
-              {CATEGORIES.map((x) => (<option key={x} value={x} className="bg-zinc-900">{x}</option>))}
-            </select>
+            {/* Custom category dropdown — avoids native browser white popup */}
+            <div ref={catRef} className="relative">
+              <button type="button" onClick={() => setShowCatDropdown(!showCatDropdown)} className={`${inputCls} flex items-center justify-between gap-2`}>
+                <span>{ecat}</span>
+                <ChevronDown size={14} className={`transition-transform duration-150 ${showCatDropdown ? "rotate-180" : ""}`} />
+              </button>
+              {showCatDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-zinc-800 border border-zinc-700 rounded-xl p-1 shadow-2xl shadow-black/40">
+                  {CATEGORIES.map((x) => (
+                    <button key={x} type="button" onClick={() => { setEcat(x); setShowCatDropdown(false); }} className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-colors ${ecat === x ? "bg-emerald-500/10 text-emerald-400" : "text-zinc-300 hover:bg-zinc-700"}`}>
+                      {x}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="flex gap-2">
               <button onClick={saveEdit} className={s.editButton}>Save</button>
-              <button variant="ghost" onClick={() => setEditing(false)} className={s.editButton}>Cancel</button>
+              <button onClick={() => setEditing(false)} className={s.editButton}>Cancel</button>
             </div>
           </div>
         ) : (
@@ -179,6 +216,17 @@ export default function PollCard({
         {/* Expandable comments section */}
         {showComments && <Comments pollId={poll._id} />}
       </div>
+
+      {/* Custom confirm dialog — replaces native window.confirm() for consistent dark theme */}
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Delete poll?"
+        message="This will permanently remove this poll and all its votes and comments. This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => { setShowDeleteConfirm(false); remove(poll._id); }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }

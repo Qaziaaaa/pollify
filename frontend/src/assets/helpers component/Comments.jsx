@@ -155,7 +155,7 @@ export default function Comments({ pollId }) {
     api
       .get(`/polls/${pollId}/comments`)
       .then((res) => setList(res.comments || []))
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load comments:", err));
   }, [pollId]);
 
   const add = async (e) => {
@@ -167,6 +167,8 @@ export default function Comments({ pollId }) {
       const res = await api.post(`/polls/${pollId}/comments`, { text });
       setList((l) => [res.comment, ...l]);
       setText("");
+    } catch (err) {
+      toast.error(err.message || "Failed to add comment");
     } finally {
       setBusy(false);
     }
@@ -174,18 +176,26 @@ export default function Comments({ pollId }) {
 
   const reply = async (parent, body) => {
     // Post a reply (nested comment) under a parent comment
-    const res = await api.post(`/polls/${pollId}/comments`, {
-      text: body,
-      parentComment: parent,
-    });
-    setList((l) => [...l, res.comment]);
+    try {
+      const res = await api.post(`/polls/${pollId}/comments`, {
+        text: body,
+        parentComment: parent,
+      });
+      setList((l) => [...l, res.comment]);
+    } catch (err) {
+      toast.error(err.message || "Failed to add reply");
+    }
   };
 
   const remove = async (id) => {
     // Delete a comment or reply by ID
-    await api.delete(`/polls/${pollId}/comments/${id}`);
-    setList((l) => l.filter((c) => c._id !== id && c._id !== id));
-    toast("Comment deleted");
+    try {
+      await api.delete(`/polls/${pollId}/comments/${id}`);
+      setList((l) => l.filter((c) => c._id !== id && String(c.parentComment) !== String(id)));
+      toast("Comment deleted");
+    } catch (err) {
+      toast.error(err.message || "Failed to delete comment");
+    }
   };
 
   const tops = list.filter((c) => !c.parentComment);

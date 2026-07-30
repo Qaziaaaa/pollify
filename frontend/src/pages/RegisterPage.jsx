@@ -7,7 +7,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
 import api from "../utils/api.js";
 import OtpStep from "../assets/helpers component/OtpStep.jsx";
-import logo from "../assets/logo.png";
 import { authLayoutStyles as ls, signupStyles as s } from "../assets/dummyStyles";
 
 export default function RegisterPage() {
@@ -51,7 +50,7 @@ export default function RegisterPage() {
         <div className={ls.glowTop} />
         <div className={ls.glowBottom} />
           <div className={ls.logoContainer}>
-            <img src={logo} alt="OpinionHub" className="h-8 object-contain" />
+            <img src="/logo.svg" alt="OpinionHub" className="h-9 object-contain" />
           </div>
         <div className={ls.mainCopyContainer}>
           <div className={ls.mainCopyInner}>

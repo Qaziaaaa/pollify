@@ -47,12 +47,14 @@ function ResultBar({ label, percent, highlight, winner, onClick }) {
   );
 }
 
-// Yes/No special display — single split bar with labels on both sides
+// Yes/No special display — balanced split bar with independent animations on both sides
 function VersusBar({ results, myVote, total, onUnvote }) {
   const yes = results[0] || { percent: 0 };
   const no = results[1] || { percent: 0 };
-  const [w, setW] = useState(0);
-  useEffect(() => { const t = setTimeout(() => setW(yes.percent), 60); return () => clearTimeout(t); }, [yes.percent]);
+  const [yesW, setYesW] = useState(0);
+  const [noW, setNoW] = useState(0);
+  useEffect(() => { const t = setTimeout(() => setYesW(yes.percent), 60); return () => clearTimeout(t); }, [yes.percent]);
+  useEffect(() => { const t = setTimeout(() => setNoW(no.percent), 60); return () => clearTimeout(t); }, [no.percent]);
 
   if (!total) return <div className={s.versusEmpty}>No votes yet</div>;
 
@@ -60,11 +62,13 @@ function VersusBar({ results, myVote, total, onUnvote }) {
 
   return (
     <div>
-      <div className={s.versusBarContainer}>
-        <div className={`${s.versusYesBase} ${hasVote && myVote === 0 ? s.versusYesHover : ""}`} style={{ width: `${w}%` }} onClick={() => hasVote && myVote === 0 && onUnvote && onUnvote()} title={myVote === 0 ? "Click to remove your vote" : ""}>
+      <div className={s.versusBarContainer} style={{ position: 'relative' }}>
+        {/* Yes bar — anchored left, grows right (toward center) */}
+        <div className={`${s.versusYesBase} ${hasVote && myVote === 0 ? s.versusYesHover : ""}`} style={{ width: `${yesW}%` }} onClick={() => hasVote && myVote === 0 && onUnvote && onUnvote()} title={myVote === 0 ? "Click to remove your vote" : ""}>
           {yes.percent >= 15 && `${yes.percent}%`}
         </div>
-        <div className={`${s.versusNoBase} ${hasVote && myVote === 1 ? s.versusNoHover : ""}`} onClick={() => hasVote && myVote === 1 && onUnvote && onUnvote()} title={myVote === 1 ? "Click to remove your vote" : ""}>
+        {/* No bar — anchored right, grows left (toward center) */}
+        <div className={`${s.versusNoBase} ${hasVote && myVote === 1 ? s.versusNoHover : ""}`} style={{ width: `${noW}%`, position: 'absolute', right: 0, top: 0, height: '100%' }} onClick={() => hasVote && myVote === 1 && onUnvote && onUnvote()} title={myVote === 1 ? "Click to remove your vote" : ""}>
           {no.percent >= 15 && `${no.percent}%`}
         </div>
       </div>

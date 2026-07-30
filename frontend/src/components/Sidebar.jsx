@@ -21,9 +21,11 @@ function ProfileCard() {
 
   useEffect(() => {
     if (!user) return;
-    api.get("/auth/profile")
+    const ctrl = new AbortController();
+    api.get("/auth/profile", { signal: ctrl.signal })
       .then((res) => setStats(res.stats || { created: (res.user?.polls || []).length, voted: 0, followers: 0, following: 0 }))
-      .catch(() => {});
+      .catch((err) => { if (!ctrl.signal.aborted) console.error("Failed to load profile stats:", err); });
+    return () => ctrl.abort();
   }, [user]);
 
   return (
@@ -62,12 +64,16 @@ function ProfileCard() {
 function Trending() {
   const [items, setItems] = useState([]);
   useEffect(() => {
-    api.get("/polls/trending")
+    const ctrl = new AbortController();
+    api.get("/polls/trending", { signal: ctrl.signal })
       .then((res) => {
-        const data = res.polls || res.data || res || [];
-        setItems(Array.isArray(data) ? data : []);
+        if (!ctrl.signal.aborted) {
+          const data = res.polls || res.data || res || [];
+          setItems(Array.isArray(data) ? data : []);
+        }
       })
-      .catch(() => {});
+      .catch((err) => { if (!ctrl.signal.aborted) console.error("Failed to load trending:", err); });
+    return () => ctrl.abort();
   }, []);
   const max = Math.max(1, ...items.map((i) => i.count));
 

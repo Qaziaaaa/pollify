@@ -7,7 +7,6 @@ import { useAuth } from "../context/AuthContext.jsx";
 import NotificationBell from "../assets/helpers component/NotificationBell.jsx";
 import RightRail from "./Sidebar.jsx";
 import { Avatar } from "./UIElements.jsx";
-import logo from "../assets/logo.png";
 import { layoutStyles as ls } from "../assets/dummyStyles";
 
 // Left sidebar navigation items
@@ -45,7 +44,7 @@ export default function Layout({ children }) {
       <header className={ls.header}>
         <div className={ls.headerInner}>
           <Link to="/dashboard" className={ls.logoLink}>
-            <img src={logo} alt="OpinionHub" className="w-8 h-8 object-contain" />
+            <img src="/logo-icon.svg" alt="OpinionHub" className="w-7 h-7" />
             <span className={ls.logoSpan}>OpinionHub</span>
           </Link>
 

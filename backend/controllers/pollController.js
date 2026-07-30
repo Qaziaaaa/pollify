@@ -51,9 +51,9 @@ export const getVotedPolls = async (req, res) => {
             .sort({ createdAt: -1 });
 
         const pollIds = polls.map((p) => p._id);
-        const commentCounts = await Comment.aggregate([
-            { $match: { poll: { $in: pollIds } } },
-            { $group: { _id: "$poll", count: { $sum: 1 } } },
+        const [commentCounts, bmSet] = await Promise.all([
+            Comment.aggregate([{ $match: { poll: { $in: pollIds } } }, { $group: { _id: "$poll", count: { $sum: 1 } } }]),
+            bookmarkSet(req.userId),
         ]);
         const ccMap = {};
         for (const c of commentCounts) ccMap[String(c._id)] = c.count;
@@ -61,6 +61,7 @@ export const getVotedPolls = async (req, res) => {
         const enriched = polls.map((poll) => {
             const p = enrichPoll(poll, req.userId);
             p.comments = ccMap[String(poll._id)] || 0;
+            p.isBookmarked = bmSet.has(String(poll._id));
             return p;
         });
 
@@ -94,7 +95,8 @@ export const createPoll = async (req, res) => {
     try {
         const { question, type, options, category } = req.body;
 
-        // Normalize options based on poll type
+        if (!question || question.trim().length < 3) return res.status(400).json({ message: "Question must be at least 3 characters" });
+        if (question.length > 500) return res.status(400).json({ message: "Question must be under 500 characters" });
         let normalized = [];
         if (type === "yesno") {
             normalized = [{ text: "Yes" }, { text: "No" }];
@@ -104,6 +106,9 @@ export const createPoll = async (req, res) => {
                 .filter((t) => t && (typeof t === "string" ? t.trim() : true))
                 .map((t) => ({ text: typeof t === "string" ? t.trim() : t.text || String(t) }));
             if (normalized.length < 2) return res.status(400).json({ message: "Add at least 2 options" });
+            for (const opt of normalized) {
+                if (opt.text.length > 200) return res.status(400).json({ message: "Option text must be under 200 characters" });
+            }
         } else if (type === "image") {
             if (!req.files || req.files.length < 2) return res.status(400).json({ message: "Add at least 2 images" });
             const urls = await Promise.all(req.files.map((f) => uploadToCloudinary(f.buffer)));
@@ -269,7 +274,9 @@ export const votePoll = async (req, res) => {
             }
         }
 
-        res.json({ poll: populated });
+        // Enrich with computed fields (myVote, totalVotes, percentages) before responding
+        const enriched = await enrichPollForResponse(populated, req.userId);
+        res.json({ poll: enriched });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -339,7 +346,11 @@ export const editPoll = async (req, res) => {
         if (poll.creator.toString() !== req.userId)
             return res.status(401).json({ message: "Not authorized" });
 
-        if (question) poll.question = question;
+        if (question) {
+            if (question.trim().length < 3) return res.status(400).json({ message: "Question must be at least 3 characters" });
+            if (question.length > 500) return res.status(400).json({ message: "Question must be under 500 characters" });
+            poll.question = question;
+        }
         if (category) poll.category = category;
         await poll.save();
 

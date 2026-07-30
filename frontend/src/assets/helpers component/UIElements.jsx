@@ -40,6 +40,36 @@ export function Avatar({ user = {}, className = "w-10 h-10" }) {
   return <div className={`${className} ${s.avatarPlaceholder}`}>{user.name?.[0]?.toUpperCase() || "?"}</div>;
 }
 
+// Dark-themed confirmation modal — replaces native window.confirm()
+export function ConfirmModal({ open, title, message, confirmLabel = "Delete", cancelLabel = "Cancel", onConfirm, onCancel }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+      {/* Modal card — rose border accent to match delete/danger theme */}
+      <div className="relative bg-zinc-900 border border-rose-500/20 rounded-2xl shadow-2xl shadow-black/60 w-full max-w-sm p-6 animate-in fade-in zoom-in-95 duration-150">
+        <h3 className="text-sm font-bold text-zinc-100 mb-2">{title}</h3>
+        <p className="text-xs text-zinc-400 leading-relaxed mb-5">{message}</p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-all"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-500 text-white hover:bg-rose-400 shadow-lg shadow-rose-500/25 transition-all"
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Loading placeholder while polls are being fetched
 export function PollSkeleton({ count = 3 }) {
   return (

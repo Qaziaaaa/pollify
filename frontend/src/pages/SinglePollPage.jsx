@@ -23,32 +23,39 @@ export default function SinglePollPage() {
 
   useEffect(() => {
     // Load the single poll from /polls/:id
-    api.get(`/polls/${id}`)
-      .then((res) => setPoll(res.poll || res))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    const ctrl = new AbortController();
+    api.get(`/polls/${id}`, { signal: ctrl.signal })
+      .then((res) => { if (!ctrl.signal.aborted) setPoll(res.poll || res); })
+      .catch((err) => { if (!ctrl.signal.aborted) setError(err.message); })
+      .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });
+    return () => ctrl.abort();
   }, [id]);
 
   const handleVote = async (pollId, value) => {
-    // Cast vote then refresh poll data
+    // Cast vote and use response directly (avoids race condition with extra GET)
     try {
-      await api.post(`/polls/${pollId}/vote`, { value });
-      const res = await api.get(`/polls/${pollId}`);
-      setPoll(res.poll || res);
+      const res = await api.post(`/polls/${pollId}/vote`, { value });
+      setPoll((prev) => prev ? { ...res.poll, saves: prev.saves || 0 } : (res.poll || res));
     } catch {}
   };
 
   const handleUnvote = async (pollId) => {
-    // Remove vote then refresh poll data
+    // Remove vote and use response directly
     try {
       const res = await api.post(`/polls/${pollId}/unvote`);
-      setPoll(res.poll || res);
+      setPoll((prev) => prev ? { ...res.poll, saves: prev.saves || 0 } : (res.poll || res));
     } catch {}
   };
 
   const toggleBookmark = async (pollId) => {
-    // Toggle bookmark state (no local state update needed — bookmark is server-side)
-    try { await api.post(`/polls/${pollId}/bookmark`); } catch {}
+    // Optimistic toggle with rollback
+    setPoll((prev) => prev ? { ...prev, isBookmarked: !prev.isBookmarked, saves: (prev.saves || 0) + (prev.isBookmarked ? -1 : 1) } : prev);
+    try {
+      await api.post(`/polls/${pollId}/bookmark`);
+    } catch {
+      // Rollback
+      setPoll((prev) => prev ? { ...prev, isBookmarked: !prev.isBookmarked, saves: (prev.saves || 0) + (prev.isBookmarked ? -1 : 1) } : prev);
+    }
   };
 
   const handleDelete = async (pollId) => {

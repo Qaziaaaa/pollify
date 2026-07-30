@@ -7,7 +7,6 @@ import { Mail, Lock, Eye, EyeOff, AlertCircle, Info } from "lucide-react";
 import api from "../utils/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { AuthButton } from "../components/UIElements.jsx";
-import logo from "../assets/logo.png";
 import { authLayoutStyles as ls, loginStyles as s } from "../assets/dummyStyles";
 
 export default function LoginPage() {
@@ -39,7 +38,7 @@ export default function LoginPage() {
         <div className={ls.glowTop} />
         <div className={ls.glowBottom} />
           <div className={ls.logoContainer}>
-            <img src={logo} alt="OpinionHub" className="h-8 object-contain" />
+            <img src="/logo.svg" alt="OpinionHub" className="h-9 object-contain" />
           </div>
         <div className={ls.mainCopyContainer}>
           <div className={ls.liveBadge}>
@@ -72,7 +71,7 @@ export default function LoginPage() {
       <div className={ls.rightPanel}>
         <div className="w-full max-w-sm">
             <div className={ls.mobileLogoContainer}>
-              <img src={logo} alt="OpinionHub" className="h-8 object-contain" />
+<img src="/logo.svg" alt="OpinionHub" className="h-9 object-contain" />
             </div>
           <div className="mb-8">
             <h2 className="text-[28px] font-bold text-white tracking-tight leading-tight">Welcome back</h2>
