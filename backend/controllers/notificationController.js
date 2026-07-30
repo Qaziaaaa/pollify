@@ -1,7 +1,11 @@
+// ===== NOTIFICATION CONTROLLER =====
+// Handles fetching notifications and marking them as read (single or bulk).
+
 import Notification from "../models/Notification.js";
 
 // @desc    Get notifications for the current user
 // @route   GET /api/notifications
+// Supports ?unreadOnly=true filter. Returns latest 50 notifications + unread count.
 export const getNotifications = async (req, res) => {
     try {
         const { unreadOnly } = req.query;
@@ -24,6 +28,7 @@ export const getNotifications = async (req, res) => {
 
 // @desc    Mark a single notification as read
 // @route   PUT /api/notifications/:id/read
+// Uses findOneAndUpdate with recipient check to ensure ownership
 export const markAsRead = async (req, res) => {
     try {
         const notification = await Notification.findOneAndUpdate(
@@ -40,6 +45,7 @@ export const markAsRead = async (req, res) => {
 
 // @desc    Mark all notifications as read
 // @route   PUT /api/notifications/read-all
+// Bulk update — marks every unread notification for this user as read
 export const markAllAsRead = async (req, res) => {
     try {
         await Notification.updateMany(

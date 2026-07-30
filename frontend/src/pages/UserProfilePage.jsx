@@ -1,6 +1,11 @@
+// ===== USER PROFILE PAGE =====
+// View another user's profile (or own), follow/unfollow, see their polls.
+// Supports all poll interaction callbacks if the viewer is the owner.
+
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
+import { optimisticVoteUpdate } from "../utils/optimisticVote.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import Layout from "../components/Layout.jsx";
 import PollCard from "../assets/helpers component/PollCard.jsx";
@@ -17,6 +22,7 @@ export default function UserProfilePage() {
   const [busyFollow, setBusyFollow] = useState(false);
 
   const fetchProfile = useCallback(() => {
+    // Load user profile + their polls from /users/:id
     const targetId = id || currentUser?._id;
     if (!targetId) {
       setLoading(false);
@@ -35,6 +41,7 @@ export default function UserProfilePage() {
   }, [fetchProfile]);
 
   const handleFollow = async () => {
+    // Toggle follow/unfollow and update local follower count
     if (!profile || busyFollow) return;
     setBusyFollow(true);
     try {
@@ -45,48 +52,82 @@ export default function UserProfilePage() {
         await api.post(`/users/${profile.user._id}/follow`);
         setProfile((prev) => ({ ...prev, isFollowing: true, stats: { ...prev.stats, followers: prev.stats.followers + 1 } }));
       }
-    } catch {}
+    } catch (err) { console.error("Follow/unfollow failed:", err); }
     setBusyFollow(false);
   };
 
   const handleVote = useCallback(async (pollId, value) => {
+    // Optimistic: immediately show correct results to prevent animation flash
+    setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) =>
+      p._id === pollId ? { ...p, ...optimisticVoteUpdate(p, value) } : p
+    )} : prev);
     try {
-      await api.post(`/polls/${pollId}/vote`, { value });
-      const res = await api.get(`/polls/${pollId}`);
-      setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) => p._id === pollId ? res.poll : p) } : prev);
-    } catch {}
+      const res = await api.post(`/polls/${pollId}/vote`, { value });
+      // Reconcile with real server data, preserve saves
+      setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) =>
+        p._id === pollId ? { ...res.poll, saves: p.saves || 0 } : p
+      )} : prev);
+    } catch (err) {
+      console.error("Vote failed:", err);
+      // Rollback
+      setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) =>
+        p._id === pollId ? { ...p, myVote: null } : p
+      )} : prev);
+    }
   }, []);
 
   const handleUnvote = useCallback(async (pollId) => {
+    // Optimistic: immediately unmark in UI
+    setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) =>
+      p._id === pollId ? { ...p, myVote: null } : p
+    )} : prev);
     try {
       const res = await api.post(`/polls/${pollId}/unvote`);
-      setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) => p._id === pollId ? res.poll : p) } : prev);
-    } catch {}
-  }, []);
+      if (res.poll) {
+        setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) =>
+          p._id === pollId ? { ...res.poll, saves: p.saves || 0 } : p
+        )} : prev);
+      }
+    } catch (err) {
+      console.error("Unvote failed:", err);
+      // Rollback by refetching profile
+      fetchProfile();
+    }
+  }, [fetchProfile]);
 
   const toggleBookmark = useCallback(async (pollId) => {
-    try { await api.post(`/polls/${pollId}/bookmark`); } catch {}
-  }, []);
+    // Optimistic: immediately toggle bookmark in UI
+    setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) =>
+      p._id === pollId ? { ...p, isBookmarked: !p.isBookmarked, saves: (p.saves || 0) + (p.isBookmarked ? -1 : 1) } : p
+    )} : prev);
+    try {
+      await api.post(`/polls/${pollId}/bookmark`);
+    } catch (err) {
+      console.error("Bookmark toggle failed:", err);
+      // Rollback: refetch profile to reset state
+      fetchProfile();
+    }
+  }, [fetchProfile]);
 
   const handleEdit = useCallback(async (pollId, data) => {
     try {
       await api.put(`/polls/${pollId}`, data);
       setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) => p._id === pollId ? { ...p, ...data } : p) } : prev);
-    } catch {}
+    } catch (err) { console.error("Edit poll failed:", err); }
   }, []);
 
   const handleClose = useCallback(async (pollId) => {
     try {
       const res = await api.patch(`/polls/${pollId}/close`);
       setProfile((prev) => prev ? { ...prev, polls: prev.polls.map((p) => p._id === pollId ? { ...p, closed: res.poll.closed } : p) } : prev);
-    } catch {}
+    } catch (err) { console.error("Close/reopen poll failed:", err); }
   }, []);
 
   const handleDelete = useCallback(async (pollId) => {
     try {
       await api.delete(`/polls/${pollId}`);
       setProfile((prev) => prev ? { ...prev, polls: prev.polls.filter((p) => p._id !== pollId) } : prev);
-    } catch {}
+    } catch (err) { console.error("Delete poll failed:", err); }
   }, []);
 
   if (loading) return <Layout><PollSkeleton /></Layout>;

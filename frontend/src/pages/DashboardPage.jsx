@@ -1,7 +1,12 @@
+// ===== DASHBOARD PAGE =====
+// Main feed: shows all polls with filtering by type, quick create composer,
+// and full poll interactions (vote, unvote, bookmark, edit, close, delete).
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { PlusSquare, Sparkles, BarChart3, Image, Star, Type, ListChecks } from "lucide-react";
+import { PlusSquare, Sparkles, BarChart3, AlertTriangle, RotateCcw, Image, Star, Type, ListChecks } from "lucide-react";
 import api from "../utils/api.js";
+import { optimisticVoteUpdate } from "../utils/optimisticVote.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { Avatar, PollSkeleton } from "../components/UIElements.jsx";
 import Layout from "../components/Layout.jsx";
@@ -9,6 +14,7 @@ import PollCard from "../assets/helpers component/PollCard.jsx";
 import FilterBar from "../components/FilterBar.jsx";
 import { dashboardStyles as s } from "../assets/dummyStyles";
 
+// Quick-create poll type buttons
 const QUICK_TYPES = [
   { key: "yesno", label: "Yes/No", Icon: ListChecks },
   { key: "single", label: "Choice", Icon: Type },
@@ -21,6 +27,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [polls, setPolls] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [bookmarks, setBookmarks] = useState(new Set());
   const [filter, setFilter] = useState("all");
   const [quickText, setQuickText] = useState("");
@@ -30,76 +37,124 @@ export default function DashboardPage() {
     if (authLoading) return;
     if (!user) { navigate("/login", { replace: true }); return; }
 
-    Promise.all([
-      api.get("/polls"),
-      api.get("/auth/bookmarks"),
-    ])
-      .then(([pollsRes, bookmarksRes]) => {
-        setPolls(pollsRes.polls || []);
-        setBookmarks(new Set((bookmarksRes.bookmarks || []).map((b) => b._id || b)));
+    setError(null);
+    setLoading(true);
+
+    api.get("/polls")
+      .then((res) => setPolls(res.polls || []))
+      .catch((err) => {
+        console.error("Failed to load polls:", err);
+        setError(err.message || "Failed to load polls");
       })
-      .catch(() => {})
       .finally(() => setLoading(false));
+
+    api.get("/auth/bookmarks")
+      .then((res) => setBookmarks(new Set((res.bookmarks || []).map((b) => b._id || b))))
+      .catch(() => {});
   }, [user, authLoading, navigate]);
 
   const handleVote = async (pollId, value) => {
+    // Optimistic: immediately show correct results to prevent animation flash
+    setPolls((prev) => prev.map((p) =>
+      p._id === pollId ? { ...p, ...optimisticVoteUpdate(p, value) } : p
+    ));
     try {
-      await api.post(`/polls/${pollId}/vote`, { value });
-      const res = await api.get(`/polls/${pollId}`);
-      setPolls((prev) => prev.map((p) => (p._id === pollId ? res.poll : p)));
-    } catch {}
+      const res = await api.post(`/polls/${pollId}/vote`, { value });
+      // Reconcile with real server data, preserve saves
+      setPolls((prev) => prev.map((p) =>
+        p._id === pollId ? { ...res.poll, saves: p.saves || 0 } : p
+      ));
+    } catch (err) {
+      console.error("Vote failed:", err);
+      // Rollback: unmark the optimistic vote
+      setPolls((prev) => prev.map((p) =>
+        p._id === pollId ? { ...p, myVote: null } : p
+      ));
+    }
   };
 
   const handleUnvote = async (pollId) => {
-    try {
-      await api.post(`/polls/${pollId}/unvote`);
-      setPolls((prev) =>
-        prev.map((p) => {
-          if (p._id !== pollId) return p;
-          return { ...p, myVote: null, totalVotes: Math.max(0, (p.totalVotes || 0) - 1) };
-        })
+    let prevVote, prevTotal;
+    setPolls((prev) => {
+      const target = prev.find((p) => p._id === pollId);
+      if (target) { prevVote = target.myVote; prevTotal = target.totalVotes; }
+      return prev.map((p) =>
+        p._id === pollId ? { ...p, myVote: null, totalVotes: Math.max(0, (p.totalVotes || 0) - 1) } : p
       );
-    } catch {}
+    });
+    try {
+      const res = await api.post(`/polls/${pollId}/unvote`);
+      // Reconcile with real server data, preserve saves
+      if (res.poll) {
+        setPolls((prev) => prev.map((p) =>
+          p._id === pollId ? { ...res.poll, saves: p.saves || 0 } : p
+        ));
+      }
+    } catch (err) {
+      console.error("Unvote failed:", err);
+      // Rollback only the target poll (no stale array snapshot)
+      setPolls((prev) => prev.map((p) =>
+        p._id === pollId ? { ...p, myVote: prevVote ?? null, totalVotes: prevTotal ?? 0 } : p
+      ));
+    }
   };
 
   const toggleBookmark = async (pollId) => {
+    // Optimistic: immediately toggle bookmark
+    const wasBookmarked = bookmarks.has(pollId);
+    setBookmarks((prev) => {
+      const next = new Set(prev);
+      if (wasBookmarked) next.delete(pollId);
+      else next.add(pollId);
+      return next;
+    });
+    setPolls((prev) =>
+      prev.map((p) =>
+        p._id === pollId
+          ? { ...p, isBookmarked: !p.isBookmarked, saves: (p.saves || 0) + (p.isBookmarked ? -1 : 1) }
+          : p
+      )
+    );
     try {
       await api.post(`/polls/${pollId}/bookmark`);
+    } catch (err) {
+      console.error("Bookmark toggle failed:", err);
+      // Rollback bookmark state
       setBookmarks((prev) => {
         const next = new Set(prev);
-        if (next.has(pollId)) next.delete(pollId);
-        else next.add(pollId);
+        if (wasBookmarked) next.add(pollId);
+        else next.delete(pollId);
         return next;
       });
       setPolls((prev) =>
         prev.map((p) =>
           p._id === pollId
-            ? { ...p, isBookmarked: !p.isBookmarked, saves: (p.saves || 0) + (p.isBookmarked ? -1 : 1) }
+            ? { ...p, isBookmarked: wasBookmarked, saves: (p.saves || 0) + (wasBookmarked ? 1 : -1) }
             : p
         )
       );
-    } catch {}
+    }
   };
 
   const handleEdit = async (pollId, data) => {
     try {
       await api.put(`/polls/${pollId}`, data);
       setPolls((prev) => prev.map((p) => (p._id === pollId ? { ...p, ...data } : p)));
-    } catch {}
+    } catch (err) { console.error("Edit poll failed:", err); }
   };
 
   const handleClose = async (pollId) => {
     try {
       const res = await api.patch(`/polls/${pollId}/close`);
       setPolls((prev) => prev.map((p) => (p._id === pollId ? { ...p, closed: res.poll.closed } : p)));
-    } catch {}
+    } catch (err) { console.error("Close/reopen poll failed:", err); }
   };
 
   const handleDelete = async (pollId) => {
     try {
       await api.delete(`/polls/${pollId}`);
       setPolls((prev) => prev.filter((p) => p._id !== pollId));
-    } catch {}
+    } catch (err) { console.error("Delete poll failed:", err); }
   };
 
   const filtered = filter === "all" ? polls : polls.filter((p) => p.type === filter);
@@ -173,7 +228,16 @@ export default function DashboardPage() {
             <FilterBar active={filter} onChange={setFilter} />
           </div>
 
-          {filtered.length > 0 ? (
+          {error ? (
+            <div className={s.emptyState}>
+              <AlertTriangle size={40} className="mx-auto text-rose-500/60 mb-4" />
+              <p className="text-rose-400/80 text-sm mb-1">Failed to load polls</p>
+              <p className="text-zinc-600 text-xs mb-4">{error}</p>
+              <button onClick={() => window.location.reload()} className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 text-white px-5 py-2.5 text-sm font-semibold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/25">
+                <RotateCcw size={14} /> Retry
+              </button>
+            </div>
+          ) : filtered.length > 0 ? (
             <div className="space-y-3">
               {filtered.map((poll) => (
                 <PollCard

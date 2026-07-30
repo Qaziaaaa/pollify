@@ -1,3 +1,7 @@
+// ===== APP ROOT =====
+// Sets up React Router with all page routes.
+// Wraps the app in AuthProvider (JWT auth state) and ToastProvider (notification popups).
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { ToastProvider } from './context/ToastContext.jsx'
@@ -18,7 +22,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
-          <div className="min-h-screen bg-zinc-950 text-zinc-300" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <div className="min-h-screen bg-zinc-950 text-zinc-300" style={{ fontFamily: 'DM Sans, sans-serif' }}>
             <Routes>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<LoginPage />} />

@@ -1,3 +1,29 @@
+# Dependencies
 node_modules/
+
+# Environment variables
 .env
-project/
+.env.local
+.env.production
+.env.development
+
+# Build outputs
+frontend/dist/
+backend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test artifacts
+backend/test_token.txt

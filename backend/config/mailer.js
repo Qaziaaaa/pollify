@@ -1,6 +1,9 @@
+// ===== NODEMAILER TRANSPORTER =====
+// Lazily creates an SMTP transporter for sending emails (OTP, notifications).
+
 import nodemailer from "nodemailer";
 
-// FIX: lazy transporter — env vars aren't loaded yet at module import time
+// Lazy singleton: transporter is created on first use (avoids env-not-loaded issue at import time)
 let transporter;
 export default function getTransporter() {
     if (!transporter) {
@@ -8,7 +11,7 @@ export default function getTransporter() {
             host: process.env.SMTP_HOST,
             port: Number(process.env.SMTP_PORT),
             secure: false,
-            family: 4,
+            family: 4, // Use IPv4 only
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS,

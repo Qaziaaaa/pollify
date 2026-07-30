@@ -1,3 +1,6 @@
+// ===== CLICK OUTSIDE HOOK =====
+// Closes a dropdown/modal when clicking outside the referenced element or pressing Escape.
+
 import { useEffect } from "react";
 
 export default function useClickOutside(ref, onClose, active = true) {

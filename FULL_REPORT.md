@@ -1,4 +1,4 @@
-# COMPLETE FIX & TEST REPORT - Pollify Project
+# COMPLETE FIX & TEST REPORT - OpinionHub Project
 
 **Date:** 2026-07-29  
 **Status:** ✅ ALL TESTS PASSING (11/11)
@@ -30,7 +30,7 @@ const user = await User.create({
   isVerified: false,
   otp: { code: otp, expiresAt: expireOTP() },
 });
-const emailSent = await sendMail({ to: user.email, subject: `Your Pollify OTP: ${otp}`, text: `Welcome! Your OTP is ${otp}` });
+const emailSent = await sendMail({ to: user.email, subject: `Your OpinionHub OTP: ${otp}`, text: `Welcome! Your OTP is ${otp}` });
 if (!emailSent) return res.status(500).json({ message: "Failed to send verification email" });
 res.status(201).json({ message: "OTP sent to your email", email: user.email });
 ```

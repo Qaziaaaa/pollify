@@ -1,3 +1,6 @@
+// ===== RIGHT SIDEBAR (RAIL) =====
+// Shows the current user's profile card with stats and a trending poll-types chart.
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { TrendingUp } from "lucide-react";
@@ -8,22 +11,21 @@ import { Avatar } from "./UIElements.jsx";
 import { sidebarStyles as s } from "../assets/dummyStyles";
 
 const COLORS = [
-  "bg-emerald-500",
-  "bg-sky-500",
-  "bg-violet-500",
-  "bg-amber-500",
-  "bg-rose-500",
+  "bg-emerald-500", "bg-sky-500", "bg-violet-500", "bg-amber-500", "bg-rose-500",
 ];
 
+// Displays user avatar, name, and created/voted/followers stats
 function ProfileCard() {
   const { user } = useAuth();
   const [stats, setStats] = useState({ created: 0, voted: 0, followers: 0, following: 0 });
 
   useEffect(() => {
     if (!user) return;
-    api.get("/auth/profile")
+    const ctrl = new AbortController();
+    api.get("/auth/profile", { signal: ctrl.signal })
       .then((res) => setStats(res.stats || { created: (res.user?.polls || []).length, voted: 0, followers: 0, following: 0 }))
-      .catch(() => {});
+      .catch((err) => { if (!ctrl.signal.aborted) console.error("Failed to load profile stats:", err); });
+    return () => ctrl.abort();
   }, [user]);
 
   return (
@@ -58,15 +60,20 @@ function ProfileCard() {
   );
 }
 
+// Horizontal bar chart showing how many polls exist per type
 function Trending() {
   const [items, setItems] = useState([]);
   useEffect(() => {
-    api.get("/polls/trending")
+    const ctrl = new AbortController();
+    api.get("/polls/trending", { signal: ctrl.signal })
       .then((res) => {
-        const data = res.polls || res.data || res || [];
-        setItems(Array.isArray(data) ? data : []);
+        if (!ctrl.signal.aborted) {
+          const data = res.polls || res.data || res || [];
+          setItems(Array.isArray(data) ? data : []);
+        }
       })
-      .catch(() => {});
+      .catch((err) => { if (!ctrl.signal.aborted) console.error("Failed to load trending:", err); });
+    return () => ctrl.abort();
   }, []);
   const max = Math.max(1, ...items.map((i) => i.count));
 

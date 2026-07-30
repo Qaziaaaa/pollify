@@ -1,3 +1,6 @@
+// ===== CLOUDINARY IMAGE UPLOAD =====
+// Configures Cloudinary SDK and provides multer middleware + upload helper.
+
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import dotenv from "dotenv";
@@ -10,15 +13,20 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const upload = multer({ storage: multer.memoryStorage() });
+// Multer middleware — parses multipart form data and stores files in memory
+export const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max per file
+});
 
+// Uploads a raw buffer to Cloudinary and returns the secure URL
 export const uploadToCloudinary = (buffer) => {
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
             { folder: "polling-app" },
             (error, result) => (error ? reject(error) : resolve(result.secure_url))
         );
-        stream.end(buffer);
+        stream.end(buffer); // Pipe the buffer into the upload stream
     });
 };
 

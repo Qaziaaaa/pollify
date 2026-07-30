@@ -1,3 +1,7 @@
+// ===== FORGOT PASSWORD PAGE =====
+// Multi-step flow: enter email → verify OTP → set new password → done.
+// Reuses the OtpStep component for code entry.
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
@@ -59,9 +63,9 @@ export default function ForgotPasswordPage() {
       <div className={ls.leftPanel}>
         <div className={ls.glowTop} />
         <div className={ls.glowBottom} />
-        <div className={ls.logoContainer}>
-          <div className={ls.logoText}>Pollify</div>
-        </div>
+          <div className={ls.logoContainer}>
+            <img src="/logo.svg" alt="OpinionHub" className="h-9 object-contain" />
+          </div>
         <div className={ls.mainCopyContainer}>
           <div className={ls.mainCopyInner}>
             <h1 className={ls.heading}>
@@ -72,7 +76,7 @@ export default function ForgotPasswordPage() {
             </p>
           </div>
         </div>
-        <div className={ls.footer}>Pollify</div>
+        <div className={ls.footer}>OpinionHub</div>
       </div>
 
       <div className={ls.rightPanel}>

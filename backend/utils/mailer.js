@@ -1,3 +1,6 @@
+// ===== MAIL HELPER =====
+// Sends emails via the configured SMTP transporter. Returns boolean success.
+
 import getTransporter from "../config/mailer.js";
 
 const sendMail = async ({ to, subject, text }) => {
@@ -11,7 +14,7 @@ const sendMail = async ({ to, subject, text }) => {
         return true;
     } catch (error) {
         console.error("Email failed:", error.message);
-        return false;
+        return false; // Return false so callers can handle gracefully instead of crashing
     }
 };
 

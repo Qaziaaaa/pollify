@@ -1,3 +1,7 @@
+// ===== COMMENTS =====
+// Fetches, displays, and adds comments (with threaded replies) for a poll.
+// Each comment has reply and delete (own) actions.
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Send, Trash2, CornerDownRight } from "lucide-react";
@@ -8,6 +12,7 @@ import { Avatar } from "./UIElements.jsx";
 import { commentsStyles as s } from "../dummyStyles";
 
 const ago = (date) => {
+  // Convert date to a relative time string: "5m", "2h", "3d", or "now"
   const s = Math.floor((Date.now() - new Date(date)) / 1000);
   for (const [n, sec] of [
     ["d", 86400],
@@ -21,10 +26,14 @@ const ago = (date) => {
 };
 
 function CommentItem({ c, replies, meId, onReply, onDelete }) {
+  // Single top-level comment: shows user avatar, text, reply/delete actions,
+  // reply textbox (toggled), and nested replies.
+
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
 
   const send = async (e) => {
+    // Submit a reply to this comment
     e.preventDefault();
     if (!text.trim()) return;
     await onReply(c._id, text.trim());
@@ -132,6 +141,9 @@ function CommentItem({ c, replies, meId, onReply, onDelete }) {
 }
 
 export default function Comments({ pollId }) {
+  // Main comments component: fetches all comments for a poll, provides
+  // add, reply, and remove functions.
+
   const { user } = useAuth();
   const toast = useToast();
   const [list, setList] = useState([]);
@@ -139,13 +151,15 @@ export default function Comments({ pollId }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    // Fetch all comments for this poll on mount
     api
       .get(`/polls/${pollId}/comments`)
       .then((res) => setList(res.comments || []))
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load comments:", err));
   }, [pollId]);
 
   const add = async (e) => {
+    // Post a new top-level comment
     e.preventDefault();
     if (!text.trim() || busy) return;
     setBusy(true);
@@ -153,23 +167,35 @@ export default function Comments({ pollId }) {
       const res = await api.post(`/polls/${pollId}/comments`, { text });
       setList((l) => [res.comment, ...l]);
       setText("");
+    } catch (err) {
+      toast.error(err.message || "Failed to add comment");
     } finally {
       setBusy(false);
     }
   };
 
   const reply = async (parent, body) => {
-    const res = await api.post(`/polls/${pollId}/comments`, {
-      text: body,
-      parentComment: parent,
-    });
-    setList((l) => [...l, res.comment]);
+    // Post a reply (nested comment) under a parent comment
+    try {
+      const res = await api.post(`/polls/${pollId}/comments`, {
+        text: body,
+        parentComment: parent,
+      });
+      setList((l) => [...l, res.comment]);
+    } catch (err) {
+      toast.error(err.message || "Failed to add reply");
+    }
   };
 
   const remove = async (id) => {
-    await api.delete(`/polls/${pollId}/comments/${id}`);
-    setList((l) => l.filter((c) => c._id !== id && c._id !== id));
-    toast("Comment deleted");
+    // Delete a comment or reply by ID
+    try {
+      await api.delete(`/polls/${pollId}/comments/${id}`);
+      setList((l) => l.filter((c) => c._id !== id && String(c.parentComment) !== String(id)));
+      toast("Comment deleted");
+    } catch (err) {
+      toast.error(err.message || "Failed to delete comment");
+    }
   };
 
   const tops = list.filter((c) => !c.parentComment);
