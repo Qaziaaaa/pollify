@@ -1,3 +1,6 @@
+// ===== POLL TYPE FILTER BAR =====
+// Renders filter tabs (All, Yes/No, Single, Image, Rating, Open) for the dashboard.
+
 import { FILTERS } from "../assets/helpers component/FilterBar.jsx";
 import { filterBarStyles as s } from "../assets/dummyStyles";
 

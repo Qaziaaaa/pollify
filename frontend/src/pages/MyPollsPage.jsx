@@ -1,3 +1,6 @@
+// ===== MY POLLS PAGE =====
+// Shows polls created by the current user. All owner controls are available.
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
@@ -13,11 +16,12 @@ export default function MyPollsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch /polls/mine once auth is ready
     if (authLoading) return;
     if (!user) { navigate("/login", { replace: true }); return; }
 
-    api.get("/polls")
-      .then((res) => setPolls((res.polls || []).filter((p) => (p.creator?._id || p.creator) === user._id)))
+    api.get("/polls/mine")
+      .then((res) => setPolls(res.polls || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user, authLoading, navigate]);

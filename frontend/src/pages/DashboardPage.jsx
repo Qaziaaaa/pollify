@@ -1,3 +1,7 @@
+// ===== DASHBOARD PAGE =====
+// Main feed: shows all polls with filtering by type, quick create composer,
+// and full poll interactions (vote, unvote, bookmark, edit, close, delete).
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PlusSquare, Sparkles, BarChart3, Image, Star, Type, ListChecks } from "lucide-react";
@@ -9,6 +13,7 @@ import PollCard from "../assets/helpers component/PollCard.jsx";
 import FilterBar from "../components/FilterBar.jsx";
 import { dashboardStyles as s } from "../assets/dummyStyles";
 
+// Quick-create poll type buttons
 const QUICK_TYPES = [
   { key: "yesno", label: "Yes/No", Icon: ListChecks },
   { key: "single", label: "Choice", Icon: Type },

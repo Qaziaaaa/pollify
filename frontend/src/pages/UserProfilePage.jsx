@@ -1,3 +1,7 @@
+// ===== USER PROFILE PAGE =====
+// View another user's profile (or own), follow/unfollow, see their polls.
+// Supports all poll interaction callbacks if the viewer is the owner.
+
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
@@ -17,6 +21,7 @@ export default function UserProfilePage() {
   const [busyFollow, setBusyFollow] = useState(false);
 
   const fetchProfile = useCallback(() => {
+    // Load user profile + their polls from /users/:id
     const targetId = id || currentUser?._id;
     if (!targetId) {
       setLoading(false);
@@ -35,6 +40,7 @@ export default function UserProfilePage() {
   }, [fetchProfile]);
 
   const handleFollow = async () => {
+    // Toggle follow/unfollow and update local follower count
     if (!profile || busyFollow) return;
     setBusyFollow(true);
     try {

@@ -1,3 +1,7 @@
+// ===== API CLIENT =====
+// Centralized HTTP wrapper around fetch. Auto-injects JWT from localStorage
+// and handles JSON vs FormData based on data type.
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 async function request(method, path, data = null) {
@@ -16,6 +20,7 @@ async function request(method, path, data = null) {
   return json;
 }
 
+// Convenience methods matching HTTP verbs
 const api = {
   get: (path) => request("GET", path),
   post: (path, data) => request("POST", path, data),

@@ -1,14 +1,22 @@
+// ===== POLL COMPUTATION HELPERS =====
+// Utility functions for computing poll results, enriching poll objects, and fetching bookmarks.
+
 import User from "../models/User.js";
 
 /**
- * Compute poll results from votes array.
- * Returns an array of result objects: { label, count, percent } or { text } for open type.
+ * computeResults — takes a raw poll document and returns structured results.
+ * Each poll type has its own aggregation logic:
+ *   - yesno: two buckets (Yes / No)
+ *   - single, image: one bucket per option, indexed by the vote value
+ *   - rating: five buckets (1-star through 5-star)
+ *   - open: each response is its own entry (raw text, no percentage)
  */
 export function computeResults(poll) {
-    const votes = poll.votes.map((v) => v.value);
+    const votes = poll.votes.map((v) => v.value); // Extract the raw vote values
     const total = votes.length;
 
     if (poll.type === "yesno") {
+        // Yes = vote value 0 (or "0" or "yes"); everything else = No
         const yes = votes.filter((v) => v === 0 || String(v) === "0" || String(v).toLowerCase() === "yes").length;
         const no = total - yes;
         return [
@@ -35,13 +43,17 @@ export function computeResults(poll) {
         });
     }
     if (poll.type === "open") {
+        // Open-ended: each response shown individually, no percentage
         return votes.map((v) => ({ text: String(v), count: 1, percent: 0 }));
     }
     return [];
 }
 
 /**
- * Enrich a poll document with computed results, myVote, totalVotes.
+ * enrichPoll — converts a Mongoose poll doc into a plain object with:
+ *   - results (computed vote breakdown)
+ *   - myVote (the current user's vote value, if any)
+ *   - totalVotes (raw count)
  */
 export function enrichPoll(poll, userId) {
     const p = poll.toObject ? poll.toObject() : { ...poll };
@@ -53,7 +65,7 @@ export function enrichPoll(poll, userId) {
 }
 
 /**
- * Build a Set of bookmark IDs for a user.
+ * bookmarkSet — fetches a user's bookmarked poll IDs and returns them as a Set for O(1) lookups.
  */
 export async function bookmarkSet(userId) {
     if (!userId) return new Set();

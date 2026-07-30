@@ -1,4 +1,4 @@
-# AGENTS.md — Pollify
+# AGENTS.md — OpinionHub
 
 ## Project Overview
 A full-stack polling application where users create, vote, bookmark, and share polls across types (yes/no, single choice, image, star rating, open-ended). Built with React + Vite frontend and Express/MongoDB backend.

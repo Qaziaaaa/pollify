@@ -1,3 +1,7 @@
+// ===== CREATE POLL PAGE =====
+// Form to create a new poll. Supports all types: yesno, single, image, rating, open.
+// Image type triggers FormData upload; single type manages dynamic option fields.
+
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2, Image, AlertCircle, X } from "lucide-react";
@@ -10,6 +14,8 @@ import { createPollStyles as s } from "../assets/dummyStyles";
 const CATEGORIES = ["General", "Tech", "Food", "Sports", "Entertainment", "Gaming", "Music", "Travel", "Education", "Lifestyle", "Other"];
 
 export default function CreatePollPage() {
+  // Form state for question, type, options, images, category
+
   const [question, setQuestion] = useState("");
   const [type, setType] = useState("yesno");
   const [options, setOptions] = useState(["", ""]);
@@ -23,18 +29,21 @@ export default function CreatePollPage() {
   const addOption = () => setOptions([...options, ""]);
   const removeOption = (i) => setOptions(options.filter((_, idx) => idx !== i));
   const updateOption = (i, v) => {
+    // Update value of a single option at index i
     const next = [...options];
     next[i] = v;
     setOptions(next);
   };
 
   const handleImageSelect = (e) => {
+    // Collect selected images with preview URLs
     const files = Array.from(e.target.files || []);
     setImages((prev) => [...prev, ...files.map((f) => ({ file: f, preview: URL.createObjectURL(f) }))]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const removeImage = (i) => {
+    // Revoke object URL and remove image from list
     setImages((prev) => {
       URL.revokeObjectURL(prev[i].preview);
       return prev.filter((_, idx) => idx !== i);
@@ -42,6 +51,7 @@ export default function CreatePollPage() {
   };
 
   const handleSubmit = async (e) => {
+    // Submit poll: FormData for image type, JSON for all others
     e.preventDefault();
     setError("");
     setLoading(true);

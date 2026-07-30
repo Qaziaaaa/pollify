@@ -1,11 +1,16 @@
+// ===== MAIN APP LAYOUT =====
+// Renders the persistent shell: top header, left sidebar nav, main content area, right rail, and bottom mobile nav.
+
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, PlusSquare, PenLine, CheckCircle2, Bookmark, LogOut, Search, Settings } from "lucide-react";
+import { LayoutDashboard, PlusSquare, PenLine, CheckCircle2, Bookmark, LogOut, Settings } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import NotificationBell from "../assets/helpers component/NotificationBell.jsx";
 import RightRail from "./Sidebar.jsx";
 import { Avatar } from "./UIElements.jsx";
+import logo from "../assets/logo.png";
 import { layoutStyles as ls } from "../assets/dummyStyles";
 
+// Left sidebar navigation items
 const NAV = [
   { to: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { to: "/create-poll", label: "Create", Icon: PlusSquare },
@@ -15,9 +20,11 @@ const NAV = [
   { to: "/settings", label: "Settings", Icon: Settings },
 ];
 
+// Bottom nav (mobile) — abbreviated set
 const BOTTOM_NAV = [
   { to: "/dashboard", label: "Home", Icon: LayoutDashboard },
   { to: "/create-poll", label: "Create", Icon: PlusSquare },
+  { to: "/voted-polls", label: "Voted", Icon: CheckCircle2 },
   { to: "/my-polls", label: "Polls", Icon: PenLine },
   { to: "/bookmarked-polls", label: "Saved", Icon: Bookmark },
 ];
@@ -34,18 +41,15 @@ export default function Layout({ children }) {
 
   return (
     <div className={ls.container}>
+      {/* Top header bar */}
       <header className={ls.header}>
         <div className={ls.headerInner}>
           <Link to="/dashboard" className={ls.logoLink}>
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center text-white text-xs font-bold shadow-lg shadow-emerald-500/30">
-              P
-            </div>
-            <span className={ls.logoSpan}>Pollify</span>
+            <img src={logo} alt="OpinionHub" className="w-8 h-8 object-contain" />
+            <span className={ls.logoSpan}>OpinionHub</span>
           </Link>
 
           <div className={ls.searchDesktop}>
-            <Search size={14} className={ls.searchIcon} />
-            <input className={ls.searchInput} placeholder="Search polls..." type="text" />
           </div>
 
           <div className={ls.rightCluster}>
@@ -58,6 +62,7 @@ export default function Layout({ children }) {
         </div>
       </header>
 
+      {/* Three-column layout: sidebar | main | right rail */}
       <div className={ls.bodyContainer}>
         <aside className={ls.leftSidebar}>
           <nav className={ls.navContainer}>
@@ -90,6 +95,7 @@ export default function Layout({ children }) {
         </aside>
       </div>
 
+      {/* Bottom tab bar (mobile) */}
       <nav className={ls.bottomNav}>
         {BOTTOM_NAV.map(({ to, label, Icon }) => {
           const isActive = location.pathname === to;
@@ -99,8 +105,9 @@ export default function Layout({ children }) {
               to={to}
               className={`${ls.bottomLinkBase} ${isActive ? ls.bottomLinkActive : ls.bottomLinkInactive}`}
             >
-              <Icon size={18} />
+              <Icon size={20} />
               {label}
+              {isActive && <span className={ls.bottomLinkDot} />}
             </Link>
           );
         })}

@@ -1,3 +1,6 @@
+// ===== DATABASE CONNECTION =====
+// Connects to MongoDB using the URI from environment variables.
+
 import mongoose from "mongoose";
 
 const connectDB = async () => {
@@ -6,7 +9,7 @@ const connectDB = async () => {
         console.log("MongoDB connected");
     } catch (error) {
         console.error(error.message);
-        process.exit(1);
+        process.exit(1); // Exit process if DB connection fails
     }
 };
 

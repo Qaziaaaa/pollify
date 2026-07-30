@@ -1,9 +1,13 @@
+// ===== BOOKMARK CONTROLLER =====
+// Toggles bookmark status on polls and retrieves all bookmarked polls for the current user.
+
 import User from "../models/User.js";
 import Comment from "../models/Comment.js";
 import { enrichPoll } from "../utils/computeResults.js";
 
-// @desc    Bookmark/unbookmark a poll
+// @desc    Toggle bookmark on a poll
 // @route   POST /api/polls/:id/bookmark
+// If already bookmarked → remove; otherwise → add. Returns new bookmark state.
 export const bookmarkPoll = async (req, res) => {
     try {
         const user = await User.findById(req.userId);
@@ -23,8 +27,9 @@ export const bookmarkPoll = async (req, res) => {
     }
 };
 
-// @desc    Get user bookmarks
+// @desc    Get all bookmarked polls for the current user
 // @route   GET /api/auth/bookmarks
+// Populates each bookmark with creator info, enriches with results & comment count
 export const getBookmarks = async (req, res) => {
     try {
         const user = await User.findById(req.userId).populate({

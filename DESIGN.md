@@ -1,4 +1,4 @@
-# DESIGN.md — Pollify
+# DESIGN.md — OpinionHub
 
 ## 1. Design System
 

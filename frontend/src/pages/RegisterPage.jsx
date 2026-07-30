@@ -1,8 +1,13 @@
+// ===== REGISTER PAGE =====
+// Multi-step registration: form → OTP verification → success screen.
+// Submits account details, sends OTP email, then verifies the code.
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
 import api from "../utils/api.js";
 import OtpStep from "../assets/helpers component/OtpStep.jsx";
+import logo from "../assets/logo.png";
 import { authLayoutStyles as ls, signupStyles as s } from "../assets/dummyStyles";
 
 export default function RegisterPage() {
@@ -45,20 +50,20 @@ export default function RegisterPage() {
       <div className={ls.leftPanel}>
         <div className={ls.glowTop} />
         <div className={ls.glowBottom} />
-        <div className={ls.logoContainer}>
-          <div className={ls.logoText}>Pollify</div>
-        </div>
+          <div className={ls.logoContainer}>
+            <img src={logo} alt="OpinionHub" className="h-8 object-contain" />
+          </div>
         <div className={ls.mainCopyContainer}>
           <div className={ls.mainCopyInner}>
             <h1 className={ls.heading}>
-              Join <span className={ls.emeraldText}>Pollify</span> Today
+              Join <span className={ls.emeraldText}>OpinionHub</span> Today
             </h1>
             <p className={ls.description}>
               Create an account and start making your voice heard.
             </p>
           </div>
         </div>
-        <div className={ls.footer}>Pollify</div>
+        <div className={ls.footer}>OpinionHub</div>
       </div>
 
       <div className={ls.rightPanel}>
@@ -68,7 +73,7 @@ export default function RegisterPage() {
             <>
               <div className="mb-8">
                 <h2 className="text-[28px] font-bold text-white tracking-tight">Create account</h2>
-                <p className="text-zinc-400 mt-2 text-sm">Get started with Pollify</p>
+                <p className="text-zinc-400 mt-2 text-sm">Get started with OpinionHub</p>
               </div>
 
               {error && (

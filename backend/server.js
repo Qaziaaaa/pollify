@@ -1,3 +1,6 @@
+// ===== POLLIFY BACKEND SERVER =====
+// Entry point for the Express API. Sets up middleware, connects DB, registers routes.
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -9,21 +12,21 @@ import pollRoutes from "./routes/pollRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 
-dotenv.config();
+dotenv.config(); // Load .env variables into process.env
 
-connectDB();
+connectDB(); // Connect to MongoDB via Mongoose
 
 const app = express();
 
-// Security
-app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" }));
-app.use(express.json({ limit: "10kb" }));
+// Security & parsing middleware
+app.use(helmet()); // Sets secure HTTP headers
+app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" })); // Restrict frontend origin
+app.use(express.json({ limit: "10kb" })); // Parse JSON bodies, max 10KB
 
-// Rate limiting
+// Rate limiting — prevents brute-force attacks on auth endpoints
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 min
-    max: 20,
+    windowMs: 15 * 60 * 1000, // 15 minute window
+    max: 20, // max 20 requests per window per IP
     message: { message: "Too many attempts, try again later" },
     standardHeaders: true,
     legacyHeaders: false,
@@ -34,13 +37,15 @@ app.use("/api/auth/forgot-password", authLimiter);
 app.use("/api/auth/reset-password", authLimiter);
 app.use("/api/auth/verify-reset-otp", authLimiter);
 
+// Register route handlers
 app.use("/api/auth", authRoutes);
 app.use("/api/polls", pollRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/notifications", notificationRoutes);
 
+// Health-check endpoint
 app.get("/", (req, res) => {
-    res.send("Pollify API is running");
+    res.send("OpinionHub API is running");
 });
 
 const PORT = process.env.PORT || 5000;

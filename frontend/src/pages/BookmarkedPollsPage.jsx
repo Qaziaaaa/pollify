@@ -1,3 +1,6 @@
+// ===== BOOKMARKED POLLS PAGE =====
+// Lists polls the current user has bookmarked. Un-bookmarking removes from list.
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
@@ -13,6 +16,7 @@ export default function BookmarkedPollsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch /auth/bookmarks once auth is ready
     if (authLoading) return;
     if (!user) { navigate("/login", { replace: true }); return; }
 

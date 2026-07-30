@@ -1,3 +1,7 @@
+// ===== TOAST (LEGACY) =====
+// Standalone toast context used by some components.
+// Note: most of the app uses ToastContext from context/ToastContext.jsx instead.
+
 import { createContext, useContext, useState, useCallback } from "react";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { toastStyles as s } from "../dummyStyles";
@@ -19,17 +23,8 @@ export function ToastProvider({ children }) {
       {children}
       <div className={s.container}>
         {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={`${s.toastBase} ${
-              t.type === "error" ? s.toastError : s.toastSuccess
-            }`}
-          >
-            {t.type === "error" ? (
-              <AlertCircle size={16} />
-            ) : (
-              <CheckCircle2 size={16} />
-            )}
+          <div key={t.id} className={`${s.toastBase} ${t.type === "error" ? s.toastError : s.toastSuccess}`}>
+            {t.type === "error" ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
             {t.message}
           </div>
         ))}

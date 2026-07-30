@@ -1,3 +1,6 @@
+// ===== RIGHT SIDEBAR (RAIL) =====
+// Shows the current user's profile card with stats and a trending poll-types chart.
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { TrendingUp } from "lucide-react";
@@ -8,13 +11,10 @@ import { Avatar } from "./UIElements.jsx";
 import { sidebarStyles as s } from "../assets/dummyStyles";
 
 const COLORS = [
-  "bg-emerald-500",
-  "bg-sky-500",
-  "bg-violet-500",
-  "bg-amber-500",
-  "bg-rose-500",
+  "bg-emerald-500", "bg-sky-500", "bg-violet-500", "bg-amber-500", "bg-rose-500",
 ];
 
+// Displays user avatar, name, and created/voted/followers stats
 function ProfileCard() {
   const { user } = useAuth();
   const [stats, setStats] = useState({ created: 0, voted: 0, followers: 0, following: 0 });
@@ -58,6 +58,7 @@ function ProfileCard() {
   );
 }
 
+// Horizontal bar chart showing how many polls exist per type
 function Trending() {
   const [items, setItems] = useState([]);
   useEffect(() => {

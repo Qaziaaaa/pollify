@@ -74,7 +74,7 @@ test.describe("Navigation (authenticated)", () => {
 test.describe("Layout & UI", () => {
   test("7. Login page has proper layout with left panel", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.locator("text=Pollify").first()).toBeVisible();
+    await expect(page.locator("text=OpinionHub").first()).toBeVisible();
   });
 
   test("8. Navigation links exist on dashboard (when logged in)", async ({ page }) => {

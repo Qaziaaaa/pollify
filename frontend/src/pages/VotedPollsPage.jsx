@@ -1,3 +1,6 @@
+// ===== VOTED POLLS PAGE =====
+// Lists polls the current user has voted on.
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
@@ -13,6 +16,7 @@ export default function VotedPollsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch /polls/voted once auth is ready
     if (authLoading) return;
     if (!user) { navigate("/login", { replace: true }); return; }
 

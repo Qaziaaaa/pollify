@@ -1,3 +1,7 @@
+// ===== SETTINGS PAGE =====
+// Profile editing (name, username, bio, avatar) + password change.
+// Username availability is checked on keystroke with debounce.
+
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { inputCls } from "../components/UIElements.jsx";
@@ -24,6 +28,7 @@ export default function SettingsPage() {
   const usernameTimer = useRef(null);
 
   useEffect(() => {
+    // Sync form fields when user data changes (e.g. after save)
     setName(user?.name || "");
     setUsername(user?.username || "");
     setBio(user?.bio || "");
@@ -31,6 +36,7 @@ export default function SettingsPage() {
   }, [user]);
 
   const checkUsername = (val) => {
+    // Debounced username availability check via /users/check-username
     if (!val || val === user?.username) { setUsernameStatus(null); return; }
     setUsernameStatus("checking");
     clearTimeout(usernameTimer.current);
@@ -43,6 +49,7 @@ export default function SettingsPage() {
   };
 
   const handleAvatarChange = (e) => {
+    // Preview selected avatar image before saving
     const f = e.target.files?.[0];
     if (!f) return;
     setAvatarFile(f);
@@ -50,6 +57,7 @@ export default function SettingsPage() {
   };
 
   const handleSaveProfile = async (e) => {
+    // Submit profile form (name, username, bio, optional avatar) via FormData
     e.preventDefault();
     setErr(""); setMsg(""); setSaving(true);
     try {
@@ -68,9 +76,10 @@ export default function SettingsPage() {
   };
 
   const handleUpdatePassword = async (e) => {
+    // Validate then submit current + new password
     e.preventDefault();
     if (!currentPassword || !newPassword) { setErr("Fill both password fields"); return; }
-    if (newPassword.length < 6) { setErr("New password must be at least 6 characters"); return; }
+    if (newPassword.length < 8) { setErr("New password must be at least 8 characters"); return; }
     setErr(""); setMsg(""); setPwSaving(true);
     try {
       await api.put("/auth/password", { currentPassword, newPassword });

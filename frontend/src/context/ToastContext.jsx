@@ -1,3 +1,7 @@
+// ===== TOAST CONTEXT =====
+// Provides a global toast notification system. Toasts auto-dismiss after 3 seconds.
+// Usage: toast("message") or toast.success("msg") / toast.error("msg")
+
 import { createContext, useContext, useState, useCallback } from "react";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 
@@ -14,12 +18,10 @@ export function ToastProvider({ children }) {
     }, 3000);
   }, []);
 
+  // Object.assign lets us call toast("msg") directly or toast.success("msg")
   const toast = Object.assign(
     (msg, type = "success") => addToast(msg, type),
-    {
-      success: (msg) => addToast(msg, "success"),
-      error: (msg) => addToast(msg, "error"),
-    }
+    { success: (msg) => addToast(msg, "success"), error: (msg) => addToast(msg, "error") }
   );
 
   return (
