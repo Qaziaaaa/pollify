@@ -32,7 +32,19 @@ async function request(method, path, data = null, options = {}) {
   try {
     const res = await fetch(`${BASE_URL}${path}`, config);
     clearTimeout(timer);
-    const json = await res.json();
+
+    let json;
+    try {
+      json = await res.json();
+    } catch {
+      // Response wasn't JSON — likely an HTML error page (cold start, 502, or wrong URL)
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        text.includes("<!DOCTYPE") || text.includes("<html")
+          ? "Server returned an HTML page — the API endpoint may be waking up or unreachable"
+          : text.slice(0, 200) || `Request failed with status ${res.status}`
+      );
+    }
 
     // Auto-logout on expired/invalid token
     if (res.status === 401) {
