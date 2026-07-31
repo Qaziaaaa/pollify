@@ -20,7 +20,24 @@ const app = express();
 
 // Security & parsing middleware
 app.use(helmet()); // Sets secure HTTP headers
-app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" })); // Restrict frontend origin
+
+// CORS — accepts comma-separated origins (e.g. "https://a.vercel.app,http://localhost:5173"),
+// allows `*` for testing, and never blocks non-browser requests (curl, Postman, uptime pings).
+const CORS_ORIGINS = (process.env.CORS_ORIGIN || "http://localhost:5173")
+    .split(",").map((o) => o.trim()).filter(Boolean);
+
+app.use(cors({
+    origin(origin, callback) {
+        // Allow non-browser requests (no Origin header) and any listed origin
+        if (!origin || CORS_ORIGINS.includes("*") || CORS_ORIGINS.includes(origin)) {
+            return callback(null, true);
+        }
+        console.warn(`[cors] Blocked origin: ${origin}`);
+        return callback(null, false);
+    },
+    credentials: true,
+}));
+
 app.use(express.json({ limit: "10kb" })); // Parse JSON bodies, max 10KB
 
 // Rate limiting — prevents brute-force attacks on auth endpoints
