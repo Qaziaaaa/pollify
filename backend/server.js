@@ -16,6 +16,16 @@ dotenv.config(); // Load .env variables into process.env
 
 connectDB(); // Connect to MongoDB via Mongoose
 
+// Startup email diagnostics — print key prefixes (never the full secret) so a
+// deploy log immediately reveals whether Brevo env vars are set correctly.
+{
+    const api = (process.env.BREVO_API_KEY || "").trim();
+    const smtp = (process.env.SMTP_PASS || "").trim();
+    console.log(`[mail] BREVO_API_KEY: ${api ? `${api.length} chars, starts "${api.slice(0, 8)}"` : "NOT SET"}`);
+    console.log(`[mail] SMTP_PASS: ${smtp ? `${smtp.length} chars, starts "${smtp.slice(0, 8)}"` : "NOT SET"}`);
+    console.log(`[mail] EMAIL_FROM: ${process.env.EMAIL_FROM || "NOT SET"}`);
+}
+
 const app = express();
 
 // Render (and other proxies) set X-Forwarded-For — required for

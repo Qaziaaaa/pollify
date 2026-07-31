@@ -8,6 +8,10 @@
 
 import getTransporter from "../config/mailer.js";
 
+// Trim the key — copy-pasting from Brevo's dashboard often appends a
+// trailing newline/space, which turns a valid key into a 401 "Key not found".
+const API_KEY = (process.env.BREVO_API_KEY || "").trim();
+
 // Send via Brevo REST API (https://developers.brevo.com/reference/sendtransacemail)
 async function sendViaApi({ to, subject, text }) {
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -15,7 +19,7 @@ async function sendViaApi({ to, subject, text }) {
         headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
-            "api-key": process.env.BREVO_API_KEY,
+            "api-key": API_KEY,
         },
         body: JSON.stringify({
             sender: { email: process.env.EMAIL_FROM },
@@ -33,7 +37,7 @@ async function sendViaApi({ to, subject, text }) {
 
 const sendMail = async ({ to, subject, text }) => {
     // Preferred path: Brevo HTTP API on port 443
-    if (process.env.BREVO_API_KEY) {
+    if (API_KEY) {
         try {
             return await sendViaApi({ to, subject, text });
         } catch (error) {
