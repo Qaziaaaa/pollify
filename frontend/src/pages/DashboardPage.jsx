@@ -230,9 +230,22 @@ export default function DashboardPage() {
 
           {error ? (
             <div className={s.emptyState}>
-              <AlertTriangle size={40} className="mx-auto text-rose-500/60 mb-4" />
-              <p className="text-rose-400/80 text-sm mb-1">Failed to load polls</p>
-              <p className="text-zinc-600 text-xs mb-4">{error}</p>
+              {error.includes("timed out") || error.includes("waking up") ? (
+                <>
+                  <AlertTriangle size={40} className="mx-auto text-amber-500/60 mb-4" />
+                  <p className="text-amber-400/80 text-sm mb-1">The server was still waking up</p>
+                  <p className="text-zinc-600 text-xs mb-4">
+                    The free backend sleeps after a while and can take ~50s to restart. Click retry or
+                    wait a moment — it usually loads on the next try.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle size={40} className="mx-auto text-rose-500/60 mb-4" />
+                  <p className="text-rose-400/80 text-sm mb-1">Failed to load polls</p>
+                  <p className="text-zinc-600 text-xs mb-4">{error}</p>
+                </>
+              )}
               <button onClick={() => window.location.reload()} className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 text-white px-5 py-2.5 text-sm font-semibold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/25">
                 <RotateCcw size={14} /> Retry
               </button>

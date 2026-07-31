@@ -4,9 +4,18 @@
 // and clears expired tokens on 401 responses.
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-const TIMEOUT_MS = 15000; // 15 second timeout — prevents hanging on slow networks
+
+// Request timeouts: the first attempt fails fast (15s) so the UI never hangs
+// on a genuinely dead server; a single automatic retry (GET only) gets a 60s
+// window to cover Render free-tier cold starts, which can take 50s+ while the
+// instance spins back up after idling.
+const ATTEMPT_TIMEOUT_MS = [15000, 60000];
 
 async function request(method, path, data = null, options = {}) {
+  return doRequest(method, path, data, options, 0);
+}
+
+async function doRequest(method, path, data = null, options = {}, attempt = 0) {
   const token = localStorage.getItem("token");
   const isFormData = data instanceof FormData;
   const headers = {};
@@ -15,7 +24,7 @@ async function request(method, path, data = null, options = {}) {
 
   // AbortController for timeout + optional external signal
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), ATTEMPT_TIMEOUT_MS[attempt] ?? 60000);
   const signal = options.signal;
 
   // Link external signal to the controller
@@ -61,6 +70,12 @@ async function request(method, path, data = null, options = {}) {
     return json;
   } catch (err) {
     clearTimeout(timer);
+    // One automatic retry on timeout for reads — covers Render cold starts where
+    // the first attempt aborts while the instance is still waking up. The second
+    // attempt hits the now-warm backend. (Never retry if the caller cancelled.)
+    if (err.name === "AbortError" && attempt === 0 && method === "GET" && !options.signal?.aborted) {
+      return doRequest(method, path, data, options, 1);
+    }
     if (err.name === "AbortError") throw new Error("Request timed out");
     throw err;
   }
