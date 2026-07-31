@@ -1,5 +1,7 @@
 // ===== NODEMAILER TRANSPORTER =====
 // Lazily creates an SMTP transporter for sending emails (OTP, notifications).
+// Note: SMTP is the FALLBACK — utils/mailer.js prefers Brevo's HTTP API
+// (port 443) because SMTP port 587 times out from some cloud hosts (Render free tier).
 
 import nodemailer from "nodemailer";
 
@@ -11,15 +13,15 @@ export default function getTransporter() {
             host: process.env.SMTP_HOST,
             port: Number(process.env.SMTP_PORT),
             secure: false,
-            family: 4, // Use IPv4 only
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS,
             },
-            // Fail fast instead of hanging for minutes on a slow/unreachable SMTP server
-            connectionTimeout: 5000,
-            greetingTimeout: 5000,
-            socketTimeout: 8000,
+            // Generous timeouts — cloud hosts can be slow to reach SMTP relays.
+            // Mail is fire-and-forget, so long timeouts don't slow the API.
+            connectionTimeout: 15000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
         });
     }
     return transporter;
