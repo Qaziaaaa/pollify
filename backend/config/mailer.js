@@ -16,6 +16,10 @@ export default function getTransporter() {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS,
             },
+            // Fail fast instead of hanging for minutes on a slow/unreachable SMTP server
+            connectionTimeout: 5000,
+            greetingTimeout: 5000,
+            socketTimeout: 8000,
         });
     }
     return transporter;

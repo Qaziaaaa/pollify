@@ -20,13 +20,15 @@ export const forgotPassword = async (req, res) => {
         user.otp = { code: otp, expiresAt: expireOTP() };
         await user.save();
 
-        const emailSent = await sendMail({
+        // Fire-and-forget the email so the endpoint responds instantly —
+        // waiting on SMTP here is what caused "Request timed out" on slow mail servers.
+        // If the email fails, the user can simply request a new OTP.
+        sendMail({
             to: user.email,
             subject: `Password Reset OTP: ${otp}`,
             text: `Your OTP is ${otp}. It expires in 10 minutes.`,
         });
 
-        if (!emailSent) return res.status(500).json({ message: "Failed to send OTP email" });
         res.json({ message: "OTP sent to your email" });
     } catch (error) {
         res.status(500).json({ message: error.message });
