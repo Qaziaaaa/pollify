@@ -18,6 +18,10 @@ connectDB(); // Connect to MongoDB via Mongoose
 
 const app = express();
 
+// Render (and other proxies) set X-Forwarded-For — required for
+// express-rate-limit to identify real client IPs behind the proxy.
+app.set("trust proxy", 1);
+
 // Security & parsing middleware
 app.use(helmet()); // Sets secure HTTP headers
 
