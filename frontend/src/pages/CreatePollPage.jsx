@@ -36,9 +36,16 @@ export default function CreatePollPage() {
   };
 
   const handleImageSelect = (e) => {
-    // Collect selected images with preview URLs
+    // Collect selected images with preview URLs.
+    // No `accept` filter on the input (it makes Windows render thumbnails,
+    // which stalls the dialog) — so validate types here instead.
     const files = Array.from(e.target.files || []);
-    setImages((prev) => [...prev, ...files.map((f) => ({ file: f, preview: URL.createObjectURL(f) }))]);
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    const skipped = files.length - images.length;
+    if (skipped > 0) {
+      setError(`${skipped} file${skipped === 1 ? "" : "s"} skipped — only images are allowed.`);
+    }
+    setImages((prev) => [...prev, ...images.map((f) => ({ file: f, preview: URL.createObjectURL(f) }))]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -192,7 +199,9 @@ export default function CreatePollPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              // No accept="image/*" — on Windows it switches the dialog to
+              // thumbnail mode, making files show as "loading" and unclickable.
+              // Type filtering happens in handleImageSelect instead.
               multiple
               className="hidden"
               onChange={handleImageSelect}
